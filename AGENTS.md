@@ -1,0 +1,22 @@
+# Agent notes
+
+- Run tests with `uv run --extra dev pytest`.
+- Development API calls require `X-Tenant-ID` and `X-User-ID`; `X-Groups` is a comma-separated ACL list.
+- Never traverse Neo4j entities before restricting the contributing `Statement` nodes by tenant and ACL.
+- The current default store/retriever are in-memory/empty for hermetic startup; production adapters must be selected during application lifespan before deployment.
+- Weaviate is cloud-hosted; never add a local Weaviate container. Use `WEAVIATE_URL` and `WEAVIATE_API_KEY`.
+- Neo4j is Aura-hosted; never add a local Neo4j container. Use the `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_PASSWORD` values from `.env`.
+- PDF parsing uses PyMuPDF without OCR. A wholly image-only PDF must fail with `OCR_REQUIRED`; never index it as an empty document.
+- Native DOCX/PPTX and PDF layout manifests live beside originals as `<object_key>.layout.json`; delete both together.
+- Runtime state is PostgreSQL-backed. Compose uses `postgres:5432`; host development uses `localhost:5433` to avoid the system PostgreSQL port.
+- Frontend Nginx must resolve `api` through Docker DNS at request time; a startup-resolved upstream becomes stale after the API container is recreated.
+- DeepSeek Flash is the default model; only temporal/causal and multi-hop final synthesis uses Pro.
+- Always use LangChain provider integrations for completion, embedding, and reranking models. Do not hand-write provider HTTP clients.
+- The current Weaviate Cloud plan permits one collection, so Compose defaults `WEAVIATE_COLLECTION` to the existing `FilingSection`; every RAG object/query is isolated by `tenantId` and `nodeType`.
+- Weaviate public ACLs use the `__public__` index marker because the shared collection does not enable null-state indexing; translate that marker back to an empty ACL before authorization checks.
+- LangGraph checkpoints are created in PostgreSQL at API startup; every chat run ID is also its checkpoint `thread_id`.
+- Chat and ingestion workers claim PostgreSQL leases; Redis is wake-up/event transport only. A malformed structured LLM response must fall back inside its graph node, never retry the whole durable run.
+- Weaviate schema additions must be rolling-upgrade safe: retrieval tolerates a missing optional property until ingestion's schema reconciliation adds it.
+- Serialize JSONB mappings before passing them to asyncpg and decode them at repository boundaries; its default JSONB codec accepts strings, not dictionaries.
+- RAPTOR uses soft-membership GMM clustering with BIC selection; inputs above the target cluster size require at least two components so a recursive parent level is always produced.
+- RAPTOR summaries are navigation-only and bounded to 4,000 characters; overlong valid model output must not fail the durable corpus rebuild.

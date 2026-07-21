@@ -1,0 +1,34 @@
+[
+  {
+    "name": "exact project identifier",
+    "query": "Project Juniper",
+    "route": "direct",
+    "tenant_id": "demo",
+    "groups": ["research"],
+    "expected_document_titles": ["Project Juniper Frontend E2E 2026-07-19"]
+  },
+  {
+    "name": "conceptual clustering query",
+    "query": "soft membership Bayesian information criterion clustering",
+    "route": "direct",
+    "tenant_id": "demo",
+    "groups": ["research"],
+    "expected_document_titles": ["Project Juniper Frontend E2E 2026-07-19"]
+  },
+  {
+    "name": "graph relationship query",
+    "query": "connection between Neo4j Aura and evidence-backed statements",
+    "route": "multi_hop",
+    "tenant_id": "demo",
+    "groups": ["research"],
+    "expected_document_titles": ["Project Juniper Frontend E2E 2026-07-19"]
+  },
+  {
+    "name": "broad architecture synthesis",
+    "query": "Summarize the recommended architecture for 100,000 documents",
+    "route": "synthesis",
+    "tenant_id": "demo",
+    "groups": ["research"],
+    "expected_document_titles": ["Agentic RAG Architecture Transcript"]
+  }
+]

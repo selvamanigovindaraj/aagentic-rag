@@ -1,0 +1,53 @@
+services:
+  api:
+    build: .
+    environment: &backend-env
+      DATABASE_URL: postgresql://rag:rag@postgres:5432/rag
+      REDIS_URL: redis://redis:6379/0
+      OBJECT_STORAGE_PATH: /data/raw
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY: rag
+      S3_SECRET_KEY: agentic-rag-secret
+      S3_BUCKET: rag-documents
+      WEAVIATE_URL: ${WEAVIATE_URL}
+      WEAVIATE_API_KEY: ${WEAVIATE_API_KEY}
+      WEAVIATE_COLLECTION: ${WEAVIATE_COLLECTION:-FilingSection}
+      NEO4J_URI: ${NEO4J_URI}
+      NEO4J_USER: ${NEO4J_USER}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_BASE_URL: https://api.deepseek.com
+      DEEPSEEK_FLASH_MODEL: deepseek-v4-flash
+      DEEPSEEK_PRO_MODEL: deepseek-v4-pro
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      VOYAGE_BASE_URL: https://api.voyageai.com/v1
+      VOYAGE_EMBEDDING_MODEL: voyage-4-lite
+      VOYAGE_RERANK_MODEL: rerank-2.5-lite
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-false}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-agentic-rag}
+      DEV_AUTH: "true"
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis, minio]
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    environment: *backend-env
+    depends_on: [postgres, redis, minio]
+  frontend:
+    build: frontend
+    ports: ["3000:80"]
+    depends_on: [api]
+  postgres:
+    image: postgres:17-alpine
+    environment: {POSTGRES_USER: rag, POSTGRES_PASSWORD: rag, POSTGRES_DB: rag}
+    ports: ["5433:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data", "./backend/migrations:/docker-entrypoint-initdb.d:ro"]
+  redis:
+    image: redis:7.4-alpine
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment: {MINIO_ROOT_USER: rag, MINIO_ROOT_PASSWORD: agentic-rag-secret}
+    volumes: ["objectdata:/data"]
+volumes: {pgdata: {}, objectdata: {}}

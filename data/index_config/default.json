@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "child_chunk_words": 200,
+  "parent_section_words": 1000,
+  "retrieval_candidates": 100,
+  "rerank_candidates": 20,
+  "accepted_evidence_per_leaf": 8
+}

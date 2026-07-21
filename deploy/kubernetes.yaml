@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: rag-api}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: rag-api}}
+  template:
+    metadata:
+      labels: {app: rag-api}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+        - name: api
+          image: agentic-rag-backend:latest
+          envFrom:
+            - secretRef: {name: agentic-rag-secrets}
+          ports: [{containerPort: 8000}]
+          readinessProbe: {httpGet: {path: /healthz, port: 8000}}
+          livenessProbe: {httpGet: {path: /healthz, port: 8000}}
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "2", memory: 2Gi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: rag-api}
+spec:
+  selector: {app: rag-api}
+  ports: [{port: 80, targetPort: 8000}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: rag-worker}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rag-worker}}
+  template:
+    metadata: {labels: {app: rag-worker}}
+    spec:
+      containers:
+        - name: worker
+          image: agentic-rag-backend:latest
+          command: [python, -m, app.worker]
+          envFrom:
+            - secretRef: {name: agentic-rag-secrets}
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {cpu: "4", memory: 4Gi}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata: {name: rag-api-latency}
+spec:
+  scaleTargetRef: {name: rag-api}
+  minReplicaCount: 2
+  maxReplicaCount: 20
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus.monitoring.svc:9090
+        metricName: rag_api_request_latency_p95_seconds
+        query: max(rag_api_request_latency_p95_seconds)
+        threshold: "1.5"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata: {name: rag-worker-backlog}
+spec:
+  scaleTargetRef: {name: rag-worker}
+  minReplicaCount: 1
+  maxReplicaCount: 50
+  pollingInterval: 15
+  triggers:
+    - type: postgresql
+      metadata:
+        connectionFromEnv: DATABASE_URL
+        query: >-
+          SELECT count(*) FROM ingestion_jobs
+          WHERE attempts < 3 AND index_version='v1'
+            AND (status='queued' OR (status='running' AND lease_until < now()))
+        targetQueryValue: "5"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: rag-frontend}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: rag-frontend}}
+  template:
+    metadata: {labels: {app: rag-frontend}}
+    spec:
+      containers:
+        - name: frontend
+          image: agentic-rag-frontend:latest
+          ports: [{containerPort: 80}]
+          readinessProbe: {httpGet: {path: /, port: 80}}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: rag-frontend}
+spec:
+  selector: {app: rag-frontend}
+  ports: [{port: 80, targetPort: 80}]

@@ -1,0 +1,482 @@
+[
+  {
+    "query": "Which company, known for ranking local search results based on relevance, distance, and prominence according to an article from The Verge, is also mentioned in two TechCrunch articles, one discussing the lack of planned additional measures for a video platform in the next six months, and the other citing a class action antitrust suit for siphoning off content, readers, and ad revenue from news publishers?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual that has become a significant figure in the realm of artificial intelligence, particularly due to their association with generative AI technology and the envisioning of AI agents to assist with various tasks, and whose integrity was questioned by a prevailing theory as mentioned in articles from both Fortune and TechCrunch?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which football club, recently discussed in articles from 'The Guardian', 'The Roar | Sports Writers Blog', and 'BBC News - Entertainment & Arts', had a significant change in league position due to a points penalty after a series of wins, and is recognized for its history and community importance as emphasized by Farhad Moshiri following an introduction by its late chairman Bill Kenwright?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual that presented himself as a trustworthy figure in the cryptocurrency industry according to The Verge, was informed about a significant financial discrepancy after a judge's intervention, and is alleged by the prosecution in a TechCrunch article to have committed fraud for personal gains?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual under 30, once considered the richest in that age bracket, who has pleaded not guilty to fraud and conspiracy charges and is accused by the prosecution of committing fraud to achieve wealth, power, and influence, as reported by TechCrunch?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, according to TechCrunch articles, invested billions to secure its status as the default search engine on various platforms and is also accused of harming news publishers' revenue streams through anticompetitive practices?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual associated with FTX, who, according to reports from 'Cnbc | World Business News Leader', 'The Verge', 'TechCrunch', and another 'TechCrunch' article, planned to establish a board with experts for his company, struggled with managing the significant growth of his company alongside Alameda Research, was implicated in directing a $14 billion customer fund misappropriation, and is alleged by the prosecution to have committed fraud for personal gain?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual that, before the FTX collapse, was seen as a trustworthy figure in the cryptocurrency industry, convinced a colleague from Jane Street to join his ventures, decided to use a substantial amount of customer funds to settle with a competitor, and is now facing allegations of fraud for personal gain according to reports from The Verge, Fortune, and TechCrunch?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which pop star, who is open about her relationship with a Chiefs TE and is unaffected by paparazzi attention, has a busy schedule with the Eras Tour and received a friendship bracelet with his number from her partner, as reported by 'The Independent - Life and Style' and 'CBSSports.com'?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "What company is at the center of claims involving manipulation of search results to maximize ad revenue according to Megan Grey in 'The Age', ranking local search results based on relevance, distance, and prominence as reported by 'The Verge', and is accused by a news publisher in a class action antitrust suit covered by 'TechCrunch' for harming their bottom line through anticompetitive practices?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which celebrity, known for experiencing significant events away from media scrutiny, was recognized by 'The Independent - Life and Style' as Time's Person of the Year, has been rumored to be romantically linked with a Chiefs TE according to 'CBSSports.com', and was also spotted supporting at Arrowhead Stadium as reported by 'The Age'?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which individual, discussed across articles from Fortune, The Verge, and TechCrunch, is at the center of a legal case where the jury must assess contrasting narratives of his actions, including allegations of using a front for secret access to customer funds and committing fraud for personal gain, while also claiming to have been overwhelmed by the growth of his business ventures?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual that presented themselves as a trustworthy figure in the cryptocurrency industry, as reported by The Verge, but is also alleged by the prosecution in a TechCrunch article to have committed fraud, and according to The Verge, informed another trader about permissible withdrawals from an account tied to a now-collapsed company and also admitted to being aware of a financial discrepancy after a judge's intervention?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which person, who has been open about her relationship with Travis Kelce and was spotted at Arrowhead Stadium, has a tour booked for the next year and has stated that paparazzi attention does not affect her, as reported by 'The Independent - Life and Style' and 'The Age'?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, featured in multiple TechCrunch articles, has both invested in new hardware developments during an annual event and has been involved in antitrust actions for securing default search engine positions and affecting news publishers' revenues through its practices?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "What are the entities that not only provide introductory incentives to attract users but also modify their betting options for events and player awards based on news and public sentiment, as reported by the Sporting News?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, according to articles from TechCrunch and The Age, has not only invested billions to remain the default search engine on various devices but is also accused of manipulating search results for ad revenue and harming news publishers' revenues through anticompetitive practices?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual under 30, once considered the richest in that age group according to TechCrunch, who is now facing a criminal trial on charges including fraud and conspiracy, and has pleaded not guilty, with allegations of using fraudulent means for gaining wealth, power, and influence?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, known for creating a Prime-themed sale day according to Wired, also offers a two-pack of USB-C-to-USB-C cables for purchase as reported by Polygon, has a dominant position in the e-reader space with its Kindle lineup as mentioned by The Verge, and is considered a life-changing opportunity for sellers by Cnbc | World Business News Leader?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, known for ranking local search results based on relevance, distance, and prominence, is also involved in legal disputes concerning the distribution of Android apps and the operation of app stores, and is accused of harming news publishers' revenue and content through anticompetitive practices, as reported by The Verge and TechCrunch?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual associated with the cryptocurrency industry who, according to articles from The Verge and TechCrunch, presented himself as trustworthy before his company's collapse, admitted to being informed about financial discrepancies after judicial intervention, was alleged to have instructed a colleague to use customer funds to repay debts, and is accused by the prosecution of committing fraud for personal gain?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who became a significant figure in generative AI due to ChatGPT, is considered one of the most brilliant and impactful people in the tech industry, and has been accused by sources from both Fortune and TechCrunch of being ousted from a board that he allegedly misled?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual under 30, once considered the wealthiest in that age group according to TechCrunch, who is facing allegations of fraud by the prosecution, and told Paradigm about his intentions for FTX's board structure, as reported by Cnbc | World Business News Leader?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, recently scrutinized by TechCrunch for both its antitrust legal defense involving document disclosure and the alleged harm its AI has caused to news publishers' revenue, also claims that its new generative AI model Gemini has capabilities that rival or exceed those of OpenAI's models?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "What is the name of the service, covered by TechCrunch, that is temporarily free for users due to Apple's interference and is known for reverse-engineering the iMessage protocol to extend functionality to Android users?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual recognized as a prodigy in Silicon Valley since his early twenties, known for showcasing a vision for AI agents at OpenAI's developer conference, and has been described by 'Fortune' and 'TechCrunch' as both brilliant and impactful in the industry as well as generous and caring, but is also suspected of not being fully truthful with the board?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual associated with FTX and Alameda Research that allegedly used customer funds to secure personal gains and simultaneously expressed to Paradigm a desire to establish an expert board for FTX while admitting challenges in managing the rapid expansion of both companies, as reported by Cnbc | World Business News Leader, The Verge, and TechCrunch?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "What type of businesses, frequently featured in Sporting News articles, are known to manipulate betting lines to manage their financial risk and ensure profitability, regardless of the event outcomes or where large sums of money are wagered?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which sportsbook, highlighted by both 'Sporting News' and 'CBSSports.com', provides a cash-out option for MLB bets, a welcome bonus plus NBA promotions, and up to $1,000 in bonus bets for new customers in Kentucky and Vermont if their first bet does not win?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which individual, whose trial involving seven counts of fraud and conspiracy is covered by both Fortune and TechCrunch, is accused of using FTX customer funds to buy out Binance and is alleged by the prosecution to have committed these acts for wealth, power, and influence?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which country, recently discussed in articles from Fortune, Globes English | Israel Business Arena, and Business Today | Latest Stock Market And Economy News India, has faced challenges such as a blockade leading to relocation warnings in Gaza, reached understandings to cease hostilities with Hamas, and has been the subject of discussions regarding intelligence failures in the context of surprise attacks?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "What group of people can utilize the options provided by team golf events to place bets on outcomes or engage in prop betting, and also capitalize on the hype generated around events to potentially profit, as reported by Sporting News?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "What are the entities that, according to Sporting News, not only offer welcome bonuses with specific requirements but also modify their betting lines in response to events like injuries or roster changes, and tighten NBA Rookie of the Year odds, all while adjusting odds to manage their liability when heavy betting occurs on a particular team or individual?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual implicated in the FTX collapse, accused of directing a $14 billion misuse of customer funds for debt repayment, utilizing a colleague as a facade for unauthorized access to these funds, and facing allegations of intentional fraud for personal gain according to reports from TechCrunch and Fortune?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, as reported by both TechCrunch and The Verge, has spent billions to maintain its default search engine status on various platforms and is also accused of harming news publishers\u2019 revenue through its business practices?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual associated with the FTX exchange whose alleged fraudulent activities, as reported by Fortune and TechCrunch, not only led to a thriving crypto exchange built on misrepresentations but also involved instructions to misuse billions in customer funds and resulted in multiple charges of fraud and conspiracy, for which he has pleaded not guilty?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which individual, subject to a criminal trial covered by TechCrunch and associated with allegations of fraud and conspiracy for their actions at a crypto exchange, is also accused by Fortune of using a colleague at Alameda Research to secretly access customer funds and whose purported success was claimed to be based on falsehoods?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Who is the individual facing a criminal trial as reported by TechCrunch, whose alleged permissible withdrawal conditions to another trader were detailed by The Verge, and who, after an intervention by Judge Lewis Kaplan, admitted to being informed about a financial discrepancy, with the same source also alleging that this person committed fraud for personal gain?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company is at the center of allegations involving manipulation of search results to maximize ad revenue according to 'The Age', is likely to win a legal case about phones and app stores if the market is defined broadly as per 'The Verge', was deemed the only valid search engine service option by 'Apple' as reported by 'The Verge', and is accused of using anticompetitive practices to harm news publishers' financial interests as per 'TechCrunch'?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Which company, founded in late 2015 and known for its generative AI poster child behind ChatGPT, is anticipated by TechCrunch to promote an \"app store for AI\" as a primary platform and to release GPT-4 with vision alongside the GPT-4 Turbo API?",
+    "route": "multi_hop"
+  },
+  {
+    "query": "Does the TechCrunch article on Meta's advertising practices involve the European Commission in a similar capacity to how the European Commission is involved in Amazon's iRobot purchase and Elon Musk's X company's DSA probe, as reported by TechCrunch in both cases?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The Age' article suggest that Taylor Swift's interaction with Travis Kelce during her NFL takeover involves a different type of exchange than the one mentioned in 'The Independent - Life and Style' articles, with one discussing a friendship bracelet and the other an invitation to a game and openness about a personal relationship?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article suggest that users are turning to Snapchat for information about a specific region due to distrust in other platforms, while The Guardian article claims that Snapchat's platform has facilitated a different type of activity unrelated to information sharing?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the CBSSports.com article claim that Caesars Sportsbook offers a different new customer bonus bet amount than the Sporting News article claims Caesars Sportsbook is expected to offer to new sign-ups in Vermont?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the 'Sporting News' article about Manchester United's defeat by Bayern indicate the same outcome for Manchester United's European competitions as the 'Sporting News' article about Alvaro Barreal's goal implies for Inter Miami's postseason running?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does Scott Hurff's perspective on product design as discussed in TechCrunch focus more on the personal experience of being a product maker and designer, while the other TechCrunch article emphasizes the role of decision-making in product design?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the article from The Verge suggest that Sam Bankman-Fried was aware of the financial discrepancies at FTX, while the TechCrunch article alleges that he knowingly committed fraud, or do both articles imply a level of awareness and intent by Sam Bankman-Fried regarding the financial issues at FTX?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the Engadget article claim that CyberGhost's cybersecurity measures include an independent security audit, a vulnerability disclosure program, and transparency reporting, while the TechCrunch article suggests that Keep Labs employs automated tools for code vulnerability assessments, indicating different approaches to product security?",
+    "route": "comparison"
+  },
+  {
+    "query": "Are the approaches of European AI startups towards regulation and compliance as discussed in TechCrunch more proactive from the beginning of their operations compared to Amazon's approach with the European Commission, which is focused on addressing concerns at this stage, as reported by TechCrunch?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The Guardian' article suggest that the efficiency of the press and command of space are essential measures of how 'the team' is functioning, while 'Essentially Sports' focuses on Aaron Judge's comments as a reflection of 'New York Yankees' internal team dynamics, indicating a difference in the aspects of team functioning being discussed?",
+    "route": "comparison"
+  },
+  {
+    "query": "Do the articles from The Roar | Sports Writers Blog discussing The All Blacks' actions in the Rugby World Cup final and their previous encounters with Argentina both present The All Blacks as having effortlessly dominated in their gameplay, or do they portray different situations regarding The All Blacks' performance?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article report a specific figure for Uber's operating and net income in Q3, while the Seeking Alpha article discusses the frequency with which 'The company' has surpassed earnings per share and revenue expectations without specifying the financial figures?",
+    "route": "comparison"
+  },
+  {
+    "query": "Did the article from The Roar | Sports Writers Blog attribute the Tasmania JackJumpers' game-high lead over the Sydney Kings to player losses, while the Sporting News article reported a lead for the Texas Rangers without mentioning player losses?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the Sporting News article stating the Los Angeles Rams and Seattle Seahawks as the best candidates for the wild-card spots align with the same publication's claim regarding the impact of a Minnesota Vikings loss on the wild card race standings for the Los Angeles Rams, New Orleans Saints, and Green Bay Packers?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The Guardian' article suggest that Scott McTominay is the tactical leader for Manchester United, while 'Essentially Sports' claims that Kevin Durant has been criticized for his lack of leadership, indicating a difference in their respective leadership roles?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The Age' suggest that the co-founders of Anthropic made no attempt to remove Sam Altman from OpenAI, while 'Fortune' and 'TechCrunch' imply that Sam Altman's departure was either shocking or due to a lack of candor with the board?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the article from The Age confirm the same aspect of Google's market behavior as the TechCrunch articles, with one discussing the acceptance of foul play allegations and the other focusing on anticompetitive behavior towards news publishers?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article discussing microblogging and public discourse platforms list a broader range of platforms including startups and new applications from larger tech companies compared to the TechCrunch article that mentions the homogenization of content on Social media platforms (TikTok, Instagram, Snapchat, Facebook, YouTube, and X)?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The Independent - Life and Style' article suggesting Prince William's emotional state regarding Princess Diana's death conflict with the same publication's depiction of the events leading up to her death in 'The Crown season six'?",
+    "route": "comparison"
+  },
+  {
+    "query": "Did the article from The Verge defending Apple's Google Search deal suggest that there were valid alternatives to Google for search engine services, while the other article from The Verge about the public and media's understanding of search engines imply a satisfaction with the public's knowledge of how search engines work?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the article from Fortune discussing Ruby Franke's daughter describe the justification for abuse as a form of necessary discipline, in contrast to the article from The Verge which exonerates Catherine Tan of any accusations of sexual harassment and coercion?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the article from Polygon discussing the Barbie film describe Mattel's portrayal in a different light compared to how The Independent - Life and Style article describes Mattel's handling of the Wilma Mankiller Barbie doll?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The New York Times' article attribute the failure of the Buffalo Bills' defense to the contributions of Jordan Poyer, while the 'Sporting News' article suggests that the Baltimore Ravens' defense needs to improve before their game against the Cincinnati Bengals?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article suggest that Sam Altman's involvement with a teen's AI startup is a positive endorsement, while the Fortune article implies a conflict within OpenAI's board regarding Sam Altman's role, and does another TechCrunch piece question Sam Altman's honesty with the board?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the Fortune article suggest that the jury will not play a role in determining the truth about Sam Bankman-Fried's actions, while the TechCrunch articles focus on past characterizations of Sam Bankman-Fried and allegations of his motives, without mentioning the jury's role in the matter?",
+    "route": "comparison"
+  },
+  {
+    "query": "Did the articles from 'The Roar | Sports Writers Blog' about 'The All Blacks' both attribute their performance issues to external factors, with one citing the impact of Argentina's victories and the other the influence of the Springboks' defence and weather conditions?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the 'Essentially Sports' article claim that the Houston Astros' actions had no significant impact on the values of Major League Baseball, while 'The New York Times' article focuses solely on the Astros' performance after a specific change to their stadium?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TalkSport article suggest a positive future for Manchester United with Jim Ratcliffe's vision, while the Sporting News article indicates a setback for Manchester United in European competitions?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the article from FOX News - Entertainment suggest that Arnold Schwarzenegger and Reese Witherspoon advocate for a similar parenting style, as opposed to the article from The Independent - Life and Style which discusses the issue of parental controls with Roblox?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the Engadget article on the Artificial Intelligence Advancement Act of 2023 suggest that the act will not initiate reports on AI regulation and data sharing, while the other Engadget article on the executive order implies that the new reporting requirement will not impact existing AI models and AI companies due to a high threshold for enforcement?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the article from FOX News - Lifestyle featuring Sherri Geerts focus on a corporate merger, in contrast to The Independent - Life and Style article which discusses generational Christmas traditions?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does 'The Age' article stating that Richelle Cranston has battled stage five chronic kidney disease while playing this season align with the same newspaper's claim about her playing history across three AFLW clubs, or do these claims highlight different aspects of her career?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article on Meta's moderation bias suggest the same kind of issue affecting Palestinians as the TechCrunch article on Norway's push to extend the ban on Meta's tracking ads, with the former discussing suppression of voices and the latter addressing unlawful user tracking?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the 'Fortune' article suggest that the foundation of FTX's success was based on dishonest practices in a similar way to how 'TechCrunch' alleges Sam Bankman-Fried sought personal gain through fraudulent means, or do these articles present different reasons for the controversy surrounding Sam Bankman-Fried?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article on GPT-4 suggest a reduced ease of prompting toxic output compared to other models, while the TechCrunch article on Meta's open source AI approach indicate concerns of potential danger and disinformation from industry competitors like Google, OpenAI, and Microsoft?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the TechCrunch article suggest that Google is engaging in anticompetitive behavior towards news publishers, while the article from The Verge implies that Google has the capability to resolve issues, and another TechCrunch article claims that Google has no plans to implement additional measures on YouTube, indicating differing levels of responsibility or initiative attributed to Google by each source?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the Polygon article suggest that Spider-Man embodies the spirit of Thanksgiving in a way that aligns with the portrayal of Thanksgiving as a time for gratitude and togetherness described in The Independent - Life and Style article?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the 'Sporting News' article suggest that the Seattle Seahawks are currently on a losing streak, in contrast to the 'Essentially Sports' article which discusses the Houston Astros having had a successful streak prior to their controversy?",
+    "route": "comparison"
+  },
+  {
+    "query": "Did the 'Sport Grill' article attribute the winning penalty to Tessa Wullaert, while 'The Roar | Sports Writers Blog' attribute a stoppage-time penalty to Cole Palmer, and do these claims concern penalties scored at different times in their respective matches?",
+    "route": "comparison"
+  },
+  {
+    "query": "Does the 'Advanced Science News' article suggest that 'rechargeable battery alternatives' are being improved for stability and safety, while 'The Guardian' article implies that 'Snapchat' is contributing to a lack of safety, despite both discussing safety-related issues?",
+    "route": "comparison"
+  },
+  {
+    "query": "Did TechCrunch report on October 31, 2023, that Google paid millions instead of billions to secure its default search engine position, and then on December 15, 2023, reported a class action antitrust suit against Google by a news publisher, making the news source's portrayal of Google's competitive practices consistent?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the Engadget report on the Sony WF-1000XM5 earbuds in October 2023 and the Fortune article discussing the Delta SkyMiles\u00ae Gold Business American Express Card cardholders' benefits in December 2023, which promotional offer was reported as a first-time occurrence, the discount on Sony WF-1000XM5 earbuds or the 20% statement credit for Delta SkyMiles\u00ae Gold Business American Express Card cardholders?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the Sporting News report on Caesars Sportsbook's promotional offer in Vermont and the CBSSports.com report on Caesars Sportsbook's new customer offer, was there a discrepancy in the bonus bet amount being offered to new customers if their first bet loses?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "After the report by Business Today | Latest Stock Market And Economy News India on October 7, 2023, regarding a surprise attack on Israel, and the subsequent report by Fortune on October 13, 2023, concerning the blockade of Gaza and the warning issued to residents, is the sequence of events reported by both news sources regarding Israel's security and humanitarian situation consistent?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has the focus of the European Commission's involvement reported by TechCrunch changed from addressing competition concerns in Amazon's iRobot purchase to facilitating dialogue and assessing issues with Meta's ad-free subscription service to probing Elon Musk's X over illegal content risks and moderation practices?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "After the report by The Verge on October 20, 2023, about Ray-Ban Meta smart glasses and the lifestyle of TikTok users, did the Music Business Worldwide report on November 21, 2023, maintain consistency regarding the behavior of TikTok users in relation to music streaming services?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report by The Verge on Apple's defense of its Google Search deal published on September 26, 2023, and the report by TechCrunch on the class action antitrust suit against Google published on December 15, 2023, was there a change in the portrayal of Google's business practices with other companies?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the TechCrunch report on Sam Bankman-Fried's intentions published on October 2, 2023, and the Verge report about Sam Bankman-Fried published on October 28, 2023, does these reports mention Sam Bankman-Fried's plan to use his wealth to save humanity, as well as his inability to run both companies simultaneously and the defense's argument that he was not a fraudulent actor?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report from The Age on October 22, 2023, regarding Google's manipulation of search results to maximize ad revenue, and the TechCrunch report on December 15, 2023, about a class action antitrust suit filed against Google citing AI's harms to news publishers' bottom lines, is the portrayal of Google's business practices consistent?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has the portrayal of the 'vampire cause' in Polygon articles changed between the November 9, 2023, article discussing the undermining of vampires' menacing air and the November 15, 2023, article highlighting vampires as a hidden presence in the best versions of stories?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Did 'The Guardian' report on Eintracht Frankfurt's historic Bundesliga achievement against Bayern Munich before 'The Independent - Sports' mentioned Joelinton's powerful goal for Newcastle?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "After the report by The Age on October 22, 2023, claiming that Google manipulates Search to maximise ad revenue, and the subsequent report by TechCrunch on November 6, 2023, regarding Epic Games' antitrust battle with Google over app distribution and payment processing markets, did TechCrunch maintain consistency in its reporting on December 15, 2023, when discussing a class action antitrust suit against Google by a news publisher?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report by FOX News - Health on October 1st, 2023, stating that '97% of kids use their device during school hours and beyond, with study participants using TikTok for nearly two hours per day on average', and the article from TechCrunch on October 2nd, 2023, discussing 'Vivek Ramaswamy's difficulty in making headway on TikTok with young users', is there consistency in the portrayal of the significant use of TikTok among young people?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Did CBSSports.com report on Kenneth Walker III's injury before Sporting News mentioned the absence of Tee Higgins, Noah Brown, Treylon Burks, and Kadarius Toney due to injuries?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the TechCrunch report on Sam Bankman-Fried's trial published on October 1, 2023, and the TechCrunch report on the allegations against Sam Bankman-Fried published on October 7, 2023, was there consistency in the portrayal of Sam Bankman-Fried's actions related to the FTX collapse?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report from The Verge on Apple's defense of its Google Search deal published on September 26, 2023, and the TechCrunch report on the class action antitrust suit against Google published on December 15, 2023, was there no change in the portrayal of Google's market influence and competitive practices?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the Engadget report on the Valve Steam Deck OLED published on November 9, 2023, at 18:00:32, and the Engadget review of the Valve Steam Deck OLED published on November 9, 2023, at 18:00:38, was the reporting on the release date of the new Steam Deck OLED consistent?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Did 'Sport Grill' report on Tessa Wullaert missing a decisive penalty before 'The Roar | Sports Writers Blog' reported on Cole Palmer scoring a penalty to secure a draw for Chelsea?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report by The Verge on Apple's defense of its Google Search deal published on September 26, 2023, and the TechCrunch report on the class action antitrust suit against Google published on December 15, 2023, was there no change in the portrayal of Google's business practices from a perspective of exclusivity to anticompetitive concerns?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the TechCrunch report on Sam Bankman-Fried's trial and the subsequent report by the same source on the prosecution's allegations against him, was there consistency in the portrayal of the charges he is facing?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report from The Verge on Google's impact on the internet's appearance published on November 1, 2023, and the report from TechCrunch on a class action antitrust suit against Google published later, was there a change in the portrayal of Google's influence on the digital ecosystem?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "After The Sydney Morning Herald reported on October 1st that Treasury yields increased, did The Age report a relaxation of bond yields when Wall Street rebounded, indicating a change or consistency in the behavior of Treasury yields?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Did the report from The Verge on Apple's defense of its Google Search deal published on September 25, 2023, and the TechCrunch article detailing what was learned about the Google antitrust case involving Apple published on October 31, 2023, show a consistency in the portrayal of Apple's actions regarding its choice of search engine and browser options for iPhone users?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Did The Guardian's report on December 12, 2023, contradict the Sporting News report regarding the performance and future outlook of Manchester United?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the TechCrunch report on the Google antitrust case published on October 31, 2023, and the TechCrunch report on the class action antitrust suit against Google published on December 15, 2023, was there consistency in the portrayal of Google's alleged anticompetitive behavior?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has the stance of the Federal Reserve on interest rates as reported by The Sydney Morning Herald remained the same between the article published on October 1, 2023, suggesting smaller future rate cuts, and the one from November 5, 2023, indicating a continuation of rate increases?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has the reporting on the involvement of individuals in their respective football teams by Sporting News remained consistent between the article discussing Cameron Carter-Vickers' debut for Celtic after a hamstring injury (published at '2023-10-04T22:42:00+00:00') and the article detailing Daniel Garnero's debut as the new permanent manager of the Paraguay national football team 30 minutes before kickoff (published at '2023-10-12T23:22:00+00:00')?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report from The Verge on November 5, 2023, regarding the Epic v. Google case and the report from TechCrunch on December 15, 2023, about the class action antitrust suit filed against Google by a news publisher, is there inconsistency in the portrayal of Google's market practices as described by these news sources?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has the focus on the need for car companies to embrace software, robotics, and artificial intelligence as reported by TechCrunch before October 1, 2023, remained consistent with the report on December 5, 2023, about Automakers and technology companies creating advanced digital platforms for vehicles?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the Sporting News report on NBA betting sites and apps published on October 2, 2023, and the Sporting News report on line shopping in sports betting published on November 6, 2023, was the portrayal of how sportsbooks operate in terms of profit-making inconsistent?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Did both the report by Fortune on Sam Bankman-Fried's influence on a colleague to join his ventures and the report by The Verge on the implications of Sam Bankman-Fried's actions on his associates maintain the same portrayal of Sam Bankman-Fried's interactions with his peers?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the Polygon report on the updates to the Steam Deck hardware published before November 16, 2023, and the Engadget review of the Steam Deck OLED, was the reporting on Valve's improvements to the Steam Deck hardware consistent?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the report from The Age before September 26, 2023, mentioning Travis Kelce's activities and the Yardbarker report before December 24, 2023, discussing Travis Kelce's performance expectations, was there a change in the focus of Travis Kelce's professional commitments?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Was Owen Teale's career impact discussed in The Sydney Morning Herald before Tate McRae's breakthrough performance on Saturday Night Live was reported by The Age?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Between the TechCrunch report on Google's expenditures to become the default search engine published on October 31, 2023, and the TechCrunch report on the class action antitrust suit against Google published on December 15, 2023, was there consistency in portraying Google's influence on various platforms and its impact on competitors' revenues?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Considering the excerpts from TechCrunch, does the report on the UK's policy inconsistency published on October 13th, 2023, agree or disagree with the importance of government support for technology as highlighted by the growth of the tech industry in Palestine before it was impacted by conflict, as reported on October 14th, 2023?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "After the 'Fortune' article on October 4, 2023, discussing Sam Bankman-Fried's actions and the state of FTX, and the 'TechCrunch' article mentioning the prosecution's allegations against Sam Bankman-Fried, is there consistency in the portrayal of Sam Bankman-Fried's legal situation according to these sources?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has the perspective on the US economy's risk of entering a recession as reported by The Sydney Morning Herald changed between the article published on October 1, 2023, and the one published on December 5, 2023?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "After The Age reported on October 22, 2023, that Google manipulates Search to maximize ad revenue, and TechCrunch reported on December 15, 2023, that Google \"siphons off\" news publishers' content and ad revenue through anticompetitive means, was the reporting on Google's alleged anticompetitive behavior consistent between these two news sources?",
+    "route": "temporal_causal"
+  },
+  {
+    "query": "Has Polygon's coverage of Spider-themed characters in 'Spider-Man: Across the Spider-Verse' changed from their earlier report on 'Spider-Man 2 (game)' which featured stories of multiple Spider-Men?",
+    "route": "temporal_causal"
+  }
+]
