@@ -30,11 +30,86 @@ from .query_rewriter import rewrite
 
 logger = logging.getLogger(__name__)
 
+_SYNTHESIS_ROUTES = {Route.COMPARISON, Route.TEMPORAL, Route.MULTIHOP}
+_PRO_ROUTES = {Route.MULTIHOP, Route.TEMPORAL}
+_OUT_OF_SCOPE_ANSWER = "I can only answer questions grounded in the authorized document corpus."
+_NO_EVIDENCE_ANSWER = "I could not find enough authorized evidence to answer reliably."
+
 
 def _log_fallback(node: str, exc: Exception) -> None:
     # Malformed structured output degrades silently by design (never retries the
     # durable run) — this is the only signal an operator has that it happened.
     logger.warning("fallback_used", extra={"node": node, "reason": type(exc).__name__})
+
+
+def _question(state: AgentState) -> str:
+    return f"<question>{state['query']}</question>"
+
+
+def _auth_from_state(state: AgentState) -> AuthContext:
+    return AuthContext(
+        subject=state["user_id"],
+        tenant_id=state["tenant_id"],
+        groups=frozenset(state["groups"]),
+    )
+
+
+def _keyword_plan(query: str, route: Route) -> ReasoningPlan:
+    return ReasoningPlan.model_validate(
+        {
+            "known_entities": [],
+            "unknown_entities": [],
+            "leaves": [
+                {"id": f"leaf_{index}", "question": question, "depends_on": []}
+                for index, question in enumerate(decompose(query, route))
+            ],
+        }
+    )
+
+
+def _initial_leaves(plan: ReasoningPlan, route: Route, expanded_query: str | None) -> list[dict]:
+    return [
+        {
+            **leaf.model_dump(),
+            "query": (
+                expanded_query or leaf.question
+                if route == Route.DIRECT or len(plan.leaves) == 1
+                else leaf.question
+            ),
+            "attempts": 0,
+            "status": "pending",
+            "candidates": [],
+            "accepted": [],
+            "rejection_reasons": [],
+        }
+        for leaf in plan.leaves
+    ]
+
+
+def _sources_block(state: AgentState, evidence: list[Evidence]) -> str:
+    by_id = {item.id: item for item in evidence}
+    groups = state.get("context_groups") or [
+        {"title": item.document_title, "ids": [item.id]} for item in evidence
+    ]
+    blocks = []
+    for group in groups:
+        seen_contexts: set[str] = set()
+        snippets = []
+        for item_id in group["ids"]:
+            context = by_id[item_id].context_text or by_id[item_id].text
+            if context in seen_contexts:
+                continue
+            seen_contexts.add(context)
+            snippets.append(f"ID: {item_id}\n{context}")
+        blocks.append(f"Source: {group['title']}\n" + "\n".join(snippets))
+    return "\n\n".join(blocks)
+
+
+def _claims_fully_cited(grounded: GroundedAnswer, sources: dict[str, Evidence]) -> bool:
+    return all(
+        claim.evidence_ids and set(claim.evidence_ids) <= sources.keys()
+        for claim in grounded.claims
+    )
 
 
 class RagPipeline:
@@ -99,6 +174,24 @@ class RagPipeline:
             },
         )
 
+    async def _structured(self, node: str, prompt_key: str, user_content: str, schema):
+        """One structured LLM call; malformed output returns None instead of raising."""
+        try:
+            raw = await self.models.complete(
+                [
+                    {"role": "system", "content": prompt(prompt_key)},
+                    {"role": "user", "content": user_content},
+                ],
+                json_output=True,
+            )
+            return schema.model_validate_json(raw)
+        except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
+            _log_fallback(node, exc)
+            return None
+
+    def _has_model_budget(self, model_calls: int) -> bool:
+        return bool(self.models) and model_calls < self.settings.max_total_model_calls
+
     async def _classify(self, state: AgentState) -> dict:
         route = classify(state["query"])
         model_calls = state.get("model_calls", 0)
@@ -108,24 +201,16 @@ class RagPipeline:
             # DIRECT -- that's exactly the case that most needs the LLM's second
             # look, not a case to skip it for (real-world phrasing rarely uses the
             # router's literal trigger words for comparison/temporal/multi-hop).
-            try:
-                raw = await self.models.complete(
-                    [
-                        {"role": "system", "content": prompt("router-expansion:v1")},
-                        {"role": "user", "content": f"<question>{state['query']}</question>"},
-                    ],
-                    json_output=True,
-                )
-                expansion = RoutingExpansion.model_validate_json(raw)
-                route = Route(expansion.route)
-            except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                _log_fallback("classify", exc)
+            expansion = await self._structured(
+                "classify", "router-expansion:v1", _question(state), RoutingExpansion
+            )
+            route = Route(expansion.route) if expansion else route
             model_calls += 1
         if route == Route.OUT_OF_SCOPE:
             return {
                 "route": route,
                 "status": "complete",
-                "answer": "I can only answer questions grounded in the authorized document corpus.",
+                "answer": _OUT_OF_SCOPE_ANSWER,
                 "model_calls": model_calls,
             }
         return {
@@ -144,80 +229,30 @@ class RagPipeline:
             return {}
         if Route(state["route"]) == Route.DIRECT:
             return {"expanded_query": state["query"]}
-        if not self.models or state.get("model_calls", 0) >= self.settings.max_total_model_calls:
+        if not self._has_model_budget(state.get("model_calls", 0)):
             return {"expanded_query": state["query"]}
-        try:
-            raw = await self.models.complete(
-                [
-                    {"role": "system", "content": prompt("query-expansion:v1")},
-                    {"role": "user", "content": f"<question>{state['query']}</question>"},
-                ],
-                json_output=True,
-            )
-            expansion = QueryExpansion.model_validate_json(raw)
-        except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-            _log_fallback("expand", exc)
-            return {
-                "expanded_query": state["query"],
-                "expansion_terms": [],
-                "model_calls": state.get("model_calls", 0) + 1,
-            }
+        expansion = await self._structured(
+            "expand", "query-expansion:v1", _question(state), QueryExpansion
+        )
         return {
-            "expanded_query": expansion.expanded_query,
-            "expansion_terms": expansion.terms,
+            "expanded_query": expansion.expanded_query if expansion else state["query"],
+            "expansion_terms": expansion.terms if expansion else [],
             "model_calls": state.get("model_calls", 0) + 1,
         }
 
     async def _plan(self, state: AgentState) -> dict:
         route = Route(state["route"])
-        questions = decompose(state["query"], route)
-        plan = ReasoningPlan.model_validate(
-            {
-                "known_entities": [],
-                "unknown_entities": [],
-                "leaves": [
-                    {"id": f"leaf_{index}", "question": question, "depends_on": []}
-                    for index, question in enumerate(questions)
-                ],
-            }
-        )
+        plan = _keyword_plan(state["query"], route)
         model_calls = state.get("model_calls", 0)
-        if (
-            self.models
-            and route in {Route.COMPARISON, Route.TEMPORAL, Route.MULTIHOP}
-            and model_calls < self.settings.max_total_model_calls
-        ):
-            try:
-                raw = await self.models.complete(
-                    [
-                        {"role": "system", "content": prompt("reasoning-plan:v1")},
-                        {"role": "user", "content": f"<question>{state['query']}</question>"},
-                    ],
-                    json_output=True,
-                )
-                plan = ReasoningPlan.model_validate_json(raw)
-            except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                _log_fallback("plan", exc)
+        if route in _SYNTHESIS_ROUTES and self._has_model_budget(model_calls):
+            llm_plan = await self._structured(
+                "plan", "reasoning-plan:v1", _question(state), ReasoningPlan
+            )
+            plan = llm_plan or plan
             model_calls += 1
-        leaves = [
-            {
-                **leaf.model_dump(),
-                "query": (
-                    state.get("expanded_query") or leaf.question
-                    if route == Route.DIRECT or len(plan.leaves) == 1
-                    else leaf.question
-                ),
-                "attempts": 0,
-                "status": "pending",
-                "candidates": [],
-                "accepted": [],
-                "rejection_reasons": [],
-            }
-            for leaf in plan.leaves
-        ]
         return {
             "reasoning_plan": plan.model_dump(),
-            "leaf_states": leaves,
+            "leaf_states": _initial_leaves(plan, route, state.get("expanded_query")),
             "subquestions": [leaf.question for leaf in plan.leaves],
             "accepted_evidence": [],
             "needs_escalation": False,
@@ -226,12 +261,6 @@ class RagPipeline:
         }
 
     async def _retrieve(self, state: AgentState) -> dict:
-        auth = AuthContext(
-            subject=state["user_id"],
-            tenant_id=state["tenant_id"],
-            groups=frozenset(state["groups"]),
-        )
-        route = Route(state["route"])
         leaves = [dict(leaf) for leaf in state["leaf_states"]]
         attempts = dict(state.get("attempts", {}))
         retrieval_calls = state.get("retrieval_calls", 0)
@@ -246,30 +275,31 @@ class RagPipeline:
             # lookup is escalated into a new reasoning plan.
             attempts[leaf["question"]] = leaf["attempts"] + 1
             leaf["attempts"] += 1
+        await self._fill_candidates(selected, Route(state["route"]), _auth_from_state(state))
+        return {
+            "leaf_states": leaves,
+            "attempts": attempts,
+            "retrieval_calls": retrieval_calls + len(selected),
+            "status": "verifying",
+        }
+
+    async def _fill_candidates(self, leaves: list[dict], route: Route, auth: AuthContext) -> None:
         results = await asyncio.gather(
             *(
                 self.retriever.retrieve(
                     leaf["query"], route, auth, self.settings.max_retrieval_candidates
                 )
-                for leaf in selected
+                for leaf in leaves
             )
         )
-        for leaf, items in zip(selected, results, strict=True):
+        for leaf, items in zip(leaves, results, strict=True):
             leaf["candidates"] = [item.model_dump(mode="json") for item in items]
             leaf["status"] = "retrieved"
-        retrieval_calls += len(selected)
-        return {
-            "leaf_states": leaves,
-            "attempts": attempts,
-            "retrieval_calls": retrieval_calls,
-            "status": "verifying",
-        }
 
-    async def _critique(self, state: AgentState) -> dict:
-        leaves = [dict(leaf) for leaf in state["leaf_states"]]
-        model_calls = state.get("model_calls", 0)
-        all_accepted: dict[str, Evidence] = {}
-        leaf_items: dict[str, list[Evidence]] = {
+    def _authorized_leaf_items(
+        self, state: AgentState, leaves: list[dict]
+    ) -> dict[str, list[Evidence]]:
+        return {
             leaf["id"]: authorized_evidence(
                 [Evidence.model_validate(item) for item in leaf.get("candidates", [])],
                 state["tenant_id"],
@@ -278,65 +308,66 @@ class RagPipeline:
             for leaf in leaves
             if leaf["status"] == "retrieved"
         }
-        decision_by_id = {}
+
+    async def _critic_decisions(
+        self, state: AgentState, leaves: list[dict], leaf_items: dict[str, list[Evidence]],
+        model_calls: int,
+    ) -> tuple[dict, int]:
         critic_input = "\n\n".join(
             f"Leaf: {leaf['question']}\nCandidate ID: {item.id}\nText: {item.text[:2000]}"
             for leaf in leaves
             for item in leaf_items.get(leaf["id"], [])
         )
         if (
-            self.models
-            and Route(state["route"]) in {Route.COMPARISON, Route.TEMPORAL, Route.MULTIHOP}
-            and critic_input
-            and model_calls < self.settings.max_total_model_calls
+            Route(state["route"]) not in _SYNTHESIS_ROUTES
+            or not critic_input
+            or not self._has_model_budget(model_calls)
         ):
-            try:
-                raw = await self.models.complete(
-                    [
-                        {"role": "system", "content": prompt("evidence-critic:v1")},
-                        {"role": "user", "content": critic_input},
-                    ],
-                    json_output=True,
-                )
-                decision_by_id = {
-                    decision.evidence_id: decision
-                    for decision in CritiqueBatch.model_validate_json(raw).decisions
-                }
-            except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                _log_fallback("critique", exc)
-                decision_by_id = {}
-            model_calls += 1
+            return {}, model_calls
+        batch = await self._structured(
+            "critique", "evidence-critic:v1", critic_input, CritiqueBatch
+        )
+        decisions = batch.decisions if batch else []
+        return {decision.evidence_id: decision for decision in decisions}, model_calls + 1
+
+    def _grade_leaf(
+        self, leaf: dict, items: list[Evidence], decision_by_id: dict, route: Route
+    ) -> list[Evidence]:
+        evidence_limit = (
+            min(2, self.settings.max_evidence_per_leaf)
+            if route == Route.DIRECT
+            else self.settings.max_evidence_per_leaf
+        )
+        accepted = grade(leaf["question"], items, evidence_limit)
+        reasons: list[str] = []
+        decisions = [decision_by_id[item.id] for item in items if item.id in decision_by_id]
+        if decisions:
+            accepted_ids = {decision.evidence_id for decision in decisions if decision.accepted}
+            accepted = [item for item in items if item.id in accepted_ids][:evidence_limit]
+            reasons = [decision.reason for decision in decisions if not decision.accepted]
+        leaf["accepted"] = [item.model_dump(mode="json") for item in accepted]
+        leaf["rejection_reasons"] = reasons
+        leaf["status"] = "accepted" if accepted else "failed"
+        return accepted
+
+    async def _critique(self, state: AgentState) -> dict:
+        route = Route(state["route"])
+        leaves = [dict(leaf) for leaf in state["leaf_states"]]
+        leaf_items = self._authorized_leaf_items(state, leaves)
+        decision_by_id, model_calls = await self._critic_decisions(
+            state, leaves, leaf_items, state.get("model_calls", 0)
+        )
+        all_accepted: dict[str, Evidence] = {}
         for leaf in leaves:
             if leaf["status"] != "retrieved":
                 for item in leaf.get("accepted", []):
                     evidence = Evidence.model_validate(item)
                     all_accepted[evidence.id] = evidence
                 continue
-            items = leaf_items[leaf["id"]]
-            evidence_limit = (
-                min(2, self.settings.max_evidence_per_leaf)
-                if Route(state["route"]) == Route.DIRECT
-                else self.settings.max_evidence_per_leaf
-            )
-            accepted = grade(leaf["question"], items, evidence_limit)
-            reasons: list[str] = []
-            decisions = [decision_by_id[item.id] for item in items if item.id in decision_by_id]
-            if decisions:
-                accepted_ids = {decision.evidence_id for decision in decisions if decision.accepted}
-                accepted = [item for item in items if item.id in accepted_ids][
-                    :evidence_limit
-                ]
-                reasons = [decision.reason for decision in decisions if not decision.accepted]
-            leaf["accepted"] = [item.model_dump(mode="json") for item in accepted]
-            leaf["rejection_reasons"] = reasons
-            leaf["status"] = "accepted" if accepted else "failed"
-            for item in accepted:
+            for item in self._grade_leaf(leaf, leaf_items[leaf["id"]], decision_by_id, route):
                 all_accepted[item.id] = item
         confidence = max((item.score for item in all_accepted.values()), default=0.0)
-        if (
-            Route(state["route"]) == Route.DIRECT
-            and confidence < self.settings.direct_confidence_threshold
-        ):
+        if route == Route.DIRECT and confidence < self.settings.direct_confidence_threshold:
             return {
                 "route": Route.MULTIHOP,
                 "escalated": True,
@@ -371,24 +402,15 @@ class RagPipeline:
             if leaf["status"] != "failed":
                 continue
             query = rewrite(leaf["question"], leaf["attempts"] + 1)
-            if self.models and model_calls < self.settings.max_total_model_calls:
-                try:
-                    raw = await self.models.complete(
-                        [
-                            {"role": "system", "content": prompt("leaf-rewrite:v1")},
-                            {
-                                "role": "user",
-                                "content": (
-                                    f"Question: {leaf['question']}\n"
-                                    f"Rejected because: {leaf['rejection_reasons']}"
-                                ),
-                            },
-                        ],
-                        json_output=True,
-                    )
-                    query = QueryExpansion.model_validate_json(raw).expanded_query
-                except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                    _log_fallback("rewrite", exc)
+            if self._has_model_budget(model_calls):
+                expansion = await self._structured(
+                    "rewrite",
+                    "leaf-rewrite:v1",
+                    f"Question: {leaf['question']}\n"
+                    f"Rejected because: {leaf['rejection_reasons']}",
+                    QueryExpansion,
+                )
+                query = expansion.expanded_query if expansion else query
                 model_calls += 1
             leaf["query"] = query
             leaf["status"] = "retry"
@@ -416,7 +438,7 @@ class RagPipeline:
         evidence = [Evidence.model_validate(item) for item in state.get("accepted_evidence", [])]
         if not evidence:
             return {
-                "answer": "I could not find enough authorized evidence to answer reliably.",
+                "answer": _NO_EVIDENCE_ANSWER,
                 "citations": [],
                 "generated_claims": 0,
                 "grounded_claims": 0,
@@ -424,95 +446,87 @@ class RagPipeline:
                 "valid_citation_references": 0,
                 "status": "complete",
             }
-        fallback = "\n\n".join(f"{item.text} [{index}]" for index, item in enumerate(evidence, 1))
-        answer = fallback
-        used = evidence
-        generated_claims = grounded_claims = len(evidence)
-        citation_references = valid_citation_references = len(evidence)
-        if self.models:
-            by_id = {item.id: item for item in evidence}
-            groups = state.get("context_groups") or [
-                {"title": item.document_title, "ids": [item.id]} for item in evidence
-            ]
-            source_groups = []
-            for group in groups:
-                seen_contexts = set()
-                snippets = []
-                for item_id in group["ids"]:
-                    context = by_id[item_id].context_text or by_id[item_id].text
-                    if context in seen_contexts:
-                        continue
-                    seen_contexts.add(context)
-                    snippets.append(f"ID: {item_id}\n{context}")
-                source_groups.append(f"Source: {group['title']}\n" + "\n".join(snippets))
-            sources = "\n\n".join(source_groups)
-            route = Route(state["route"])
-            raw = await self.models.complete(
-                [
-                    {
-                        "role": "system",
-                        "content": prompt("grounded-claims:v1"),
-                    },
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Question: {state['query']}\n<evidence>\n{sources}\n</evidence>"
-                        ),
-                    },
-                ],
-                use_pro=route in {Route.MULTIHOP, Route.TEMPORAL},
-                json_output=True,
+        if not self.models:
+            return self._numbered_fallback(state, evidence)
+        grounded = await self._grounded_answer(state, evidence)
+        sources = {item.id: item for item in evidence if item.source_kind == "source"}
+        if grounded and not grounded.claims:
+            return self._declined_answer(state, grounded)
+        if grounded and _claims_fully_cited(grounded, sources):
+            return self._cited_answer(state, grounded, sources)
+        if grounded:
+            logger.warning(
+                "fallback_used",
+                extra={"node": "generate", "reason": "citation_outside_accepted_evidence"},
             )
-            try:
-                grounded = GroundedAnswer.model_validate_json(raw)
-            except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                _log_fallback("generate", exc)
-                grounded = None
-            by_id = {item.id: item for item in evidence if item.source_kind == "source"}
-            if grounded and not grounded.claims:
-                # `all(...)` over an empty claims list is vacuously True -- without this
-                # branch, a model correctly declining to fabricate a connection (per
-                # GROUNDED_CLAIMS_V1's "put it in unsupported rather than inferring it")
-                # would read as a successful, grounded, zero-content answer instead of
-                # the refusal it actually is.
-                generated_claims = grounded_claims = 0
-                citation_references = valid_citation_references = 0
-                used = []
-                answer = "I could not find enough authorized evidence to answer reliably."
-                if grounded.unsupported:
-                    answer += " Missing: " + "; ".join(grounded.unsupported)
-            elif grounded and all(
-                claim.evidence_ids and set(claim.evidence_ids) <= by_id.keys()
-                for claim in grounded.claims
-            ):
-                generated_claims = grounded_claims = len(grounded.claims)
-                citation_references = valid_citation_references = sum(
-                    len(claim.evidence_ids) for claim in grounded.claims
-                )
-                ordered_ids = list(
-                    dict.fromkeys(
-                        evidence_id
-                        for claim in grounded.claims
-                        for evidence_id in claim.evidence_ids
-                    )
-                )
-                used = [by_id[evidence_id] for evidence_id in ordered_ids]
-                citation_numbers = {item.id: index for index, item in enumerate(used, 1)}
-                answer = "\n\n".join(
-                    claim.text
-                    + " "
-                    + "".join(f"[{citation_numbers[item]}]" for item in claim.evidence_ids)
-                    for claim in grounded.claims
-                )
-                if grounded.unsupported:
-                    answer += "\n\nUnsupported: " + "; ".join(grounded.unsupported)
-            else:
-                if grounded:
-                    logger.warning(
-                        "fallback_used",
-                        extra={"node": "generate", "reason": "citation_outside_accepted_evidence"},
-                    )
-                answer = fallback
+        return self._numbered_fallback(state, evidence)
+
+    async def _grounded_answer(self, state: AgentState, evidence: list[Evidence]):
+        # Unlike the other nodes, only the parse is guarded: a transport error
+        # here must propagate to the durable run, not degrade into a fallback.
+        raw = await self.models.complete(
+            [
+                {"role": "system", "content": prompt("grounded-claims:v1")},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Question: {state['query']}\n"
+                        f"<evidence>\n{_sources_block(state, evidence)}\n</evidence>"
+                    ),
+                },
+            ],
+            use_pro=Route(state["route"]) in _PRO_ROUTES,
+            json_output=True,
+        )
+        try:
+            return GroundedAnswer.model_validate_json(raw)
+        except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
+            _log_fallback("generate", exc)
+            return None
+
+    def _declined_answer(self, state: AgentState, grounded: GroundedAnswer) -> dict:
+        # `all(...)` over an empty claims list is vacuously True -- without this
+        # branch, a model correctly declining to fabricate a connection (per
+        # GROUNDED_CLAIMS_V1's "put it in unsupported rather than inferring it")
+        # would read as a successful, grounded, zero-content answer instead of
+        # the refusal it actually is.
+        answer = _NO_EVIDENCE_ANSWER
+        if grounded.unsupported:
+            answer += " Missing: " + "; ".join(grounded.unsupported)
+        return self._generation_result(state, answer, used=[], claims=0, references=0)
+
+    def _cited_answer(
+        self, state: AgentState, grounded: GroundedAnswer, sources: dict[str, Evidence]
+    ) -> dict:
+        ordered_ids = list(
+            dict.fromkeys(
+                evidence_id for claim in grounded.claims for evidence_id in claim.evidence_ids
+            )
+        )
+        used = [sources[evidence_id] for evidence_id in ordered_ids]
+        citation_numbers = {item.id: index for index, item in enumerate(used, 1)}
+        answer = "\n\n".join(
+            claim.text
+            + " "
+            + "".join(f"[{citation_numbers[item]}]" for item in claim.evidence_ids)
+            for claim in grounded.claims
+        )
+        if grounded.unsupported:
+            answer += "\n\nUnsupported: " + "; ".join(grounded.unsupported)
+        references = sum(len(claim.evidence_ids) for claim in grounded.claims)
+        return self._generation_result(
+            state, answer, used, claims=len(grounded.claims), references=references
+        )
+
+    def _numbered_fallback(self, state: AgentState, evidence: list[Evidence]) -> dict:
+        answer = "\n\n".join(f"{item.text} [{index}]" for index, item in enumerate(evidence, 1))
+        return self._generation_result(
+            state, answer, evidence, claims=len(evidence), references=len(evidence)
+        )
+
+    def _generation_result(
+        self, state: AgentState, answer: str, used: list[Evidence], claims: int, references: int
+    ) -> dict:
         citations = [
             Citation(
                 tenant_id=state["tenant_id"],
@@ -528,10 +542,10 @@ class RagPipeline:
             "answer": answer,
             "citations": [item.model_dump(mode="json") for item in citations],
             "citation_verification": "passed" if citations else "unsupported",
-            "generated_claims": generated_claims,
-            "grounded_claims": grounded_claims,
-            "citation_references": citation_references,
-            "valid_citation_references": valid_citation_references,
+            "generated_claims": claims,
+            "grounded_claims": claims,
+            "citation_references": references,
+            "valid_citation_references": references,
             "model_calls": state.get("model_calls", 0) + (1 if self.models else 0),
             "status": "complete",
         }

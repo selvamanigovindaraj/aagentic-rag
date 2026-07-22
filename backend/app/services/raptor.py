@@ -73,48 +73,13 @@ async def build_summary_tree(
     level = 1
     while current:
         clusters = await asyncio.to_thread(_gmm_clusters, current, cluster_size)
-        next_level: list[tuple[str, str, int | None, str | None, list[float]]] = []
+        next_level: list[tuple] = []
         for cluster in clusters:
-            evidence = "\n\n".join(item[1] for item in cluster)
-            try:
-                raw = await models.complete(
-                    [
-                        {"role": "system", "content": prompt("raptor-summary:v1")},
-                        {"role": "user", "content": f"<evidence>\n{evidence}\n</evidence>"},
-                    ],
-                    json_output=True,
-                )
-                text = SummaryOutput.model_validate_json(raw).summary[:MAX_SUMMARY_CHARACTERS]
-            except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                # One cluster's summarization failing (token-limit truncation,
-                # malformed JSON) must not fail the whole corpus rebuild --
-                # fall back to an extractive excerpt for just this node.
-                logger.warning("summary_call_failed", extra={"reason": type(exc).__name__})
-                text = evidence[:MAX_SUMMARY_CHARACTERS]
-            if not is_grounded(text, evidence):
-                # A summary sharing no vocabulary with its own source cluster is more
-                # likely a prompt injection than a faithful abstraction; fall back to
-                # an extractive excerpt rather than trust it into the navigation tree.
-                logger.warning("ungrounded_summary_rejected", extra={"summary": text[:200]})
-                text = evidence[:MAX_SUMMARY_CHARACTERS]
-            child_ids = tuple(item[0] for item in cluster)
-            # Keyed by membership, not GMM component index, so a cluster whose
-            # membership is unchanged across a rebuild keeps the same node key
-            # even though BIC-selected component numbering is not stable.
-            key = f"{key_prefix}-{level}-{_cluster_key(child_ids)}"
-            vector = (await embedder.embed([text], "document"))[0]
-            node = SummaryNode(
-                key=key,
-                text=text,
-                level=level,
-                child_ids=child_ids,
-                page=cluster[0][2],
-                section=cluster[0][3],
-                vector=vector,
-                source_ids=tuple(dict.fromkeys(source for item in cluster for source in item[5])),
-            )
+            node = await _summarize_cluster(cluster, level, key_prefix, models, embedder)
             summaries.append(node)
-            next_level.append((key, text, node.page, node.section, vector, node.source_ids))
+            next_level.append(
+                (node.key, node.text, node.page, node.section, node.vector, node.source_ids)
+            )
         if len(next_level) == 1:
             break
         current = next_level
@@ -123,6 +88,54 @@ async def build_summary_tree(
         root = summaries[-1]
         summaries[-1] = replace(root, is_root=True)
     return summaries
+
+
+async def _cluster_summary_text(evidence: str, models: ModelGateway) -> str:
+    try:
+        raw = await models.complete(
+            [
+                {"role": "system", "content": prompt("raptor-summary:v1")},
+                {"role": "user", "content": f"<evidence>\n{evidence}\n</evidence>"},
+            ],
+            json_output=True,
+        )
+        text = SummaryOutput.model_validate_json(raw).summary[:MAX_SUMMARY_CHARACTERS]
+    except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
+        # One cluster's summarization failing (token-limit truncation,
+        # malformed JSON) must not fail the whole corpus rebuild --
+        # fall back to an extractive excerpt for just this node.
+        logger.warning("summary_call_failed", extra={"reason": type(exc).__name__})
+        return evidence[:MAX_SUMMARY_CHARACTERS]
+    if not is_grounded(text, evidence):
+        # A summary sharing no vocabulary with its own source cluster is more
+        # likely a prompt injection than a faithful abstraction; fall back to
+        # an extractive excerpt rather than trust it into the navigation tree.
+        logger.warning("ungrounded_summary_rejected", extra={"summary": text[:200]})
+        return evidence[:MAX_SUMMARY_CHARACTERS]
+    return text
+
+
+async def _summarize_cluster(
+    cluster: list[tuple], level: int, key_prefix: str, models: ModelGateway, embedder: Embedder
+) -> SummaryNode:
+    evidence = "\n\n".join(item[1] for item in cluster)
+    text = await _cluster_summary_text(evidence, models)
+    child_ids = tuple(item[0] for item in cluster)
+    # Keyed by membership, not GMM component index, so a cluster whose
+    # membership is unchanged across a rebuild keeps the same node key
+    # even though BIC-selected component numbering is not stable.
+    key = f"{key_prefix}-{level}-{_cluster_key(child_ids)}"
+    vector = (await embedder.embed([text], "document"))[0]
+    return SummaryNode(
+        key=key,
+        text=text,
+        level=level,
+        child_ids=child_ids,
+        page=cluster[0][2],
+        section=cluster[0][3],
+        vector=vector,
+        source_ids=tuple(dict.fromkeys(source for item in cluster for source in item[5])),
+    )
 
 
 def _cluster_key(child_ids: tuple[str, ...]) -> str:

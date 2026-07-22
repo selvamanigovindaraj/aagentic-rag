@@ -37,21 +37,17 @@ class CachedRetriever:
         self.cache = cache
         self.index_version = index_version
 
+    def _cache_key(self, query: str, route: Route, auth: AuthContext, limit: int) -> str:
+        identity = json.dumps(
+            [self.index_version, auth.tenant_id, sorted(auth.groups), route, query, limit],
+            separators=(",", ":"),
+        )
+        return hashlib.sha256(identity.encode()).hexdigest()
+
     async def retrieve(
         self, query: str, route: Route, auth: AuthContext, limit: int
     ) -> list[Evidence]:
-        identity = json.dumps(
-            [
-                self.index_version,
-                auth.tenant_id,
-                sorted(auth.groups),
-                route,
-                query,
-                limit,
-            ],
-            separators=(",", ":"),
-        )
-        key = hashlib.sha256(identity.encode()).hexdigest()
+        key = self._cache_key(query, route, auth, limit)
         cached = await self.cache.get(key)
         if cached:
             try:
@@ -143,26 +139,35 @@ class WeaviateRetriever:
                 )
         return await self._search_chunks(escaped, vector, tenant, groups, limit)
 
-    async def _search_chunks(
+    async def _post_graphql(self, gql: str) -> dict:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post(
+                f"{self.url}/v1/graphql", headers=self.headers, json={"query": gql}
+            )
+            response.raise_for_status()
+        return response.json()
+
+    def _where(self, tenant: str, groups: str, node_type: str, extra_filter: str = "") -> str:
+        return (
+            "{operator:And,operands:["
+            f'{{path:["tenantId"],operator:Equal,valueText:{tenant}}},'
+            f'{{path:["indexVersion"],operator:Equal,valueText:{json.dumps(self.index_version)}}},'
+            f'{{path:["aclGroups"],operator:ContainsAny,valueText:{groups}}},'
+            f'{{path:["nodeType"],operator:Equal,valueText:"{node_type}"}}{extra_filter}'
+            "]}"
+        )
+
+    def _chunk_query(
         self,
         escaped: str,
         vector: list[float] | None,
         tenant: str,
         groups: str,
         limit: int,
-        extra_filter: str = "",
-        include_parent: bool = True,
-    ) -> list[Evidence]:
-        where = (
-            "{operator:And,operands:["
-            f'{{path:["tenantId"],operator:Equal,valueText:{tenant}}},'
-            f'{{path:["indexVersion"],operator:Equal,valueText:{json.dumps(self.index_version)}}},'
-            f'{{path:["aclGroups"],operator:ContainsAny,valueText:{groups}}},'
-            f'{{path:["nodeType"],operator:Equal,valueText:"chunk"}}{extra_filter}'
-            "]}"
-        )
-        parent_field = "parentText " if include_parent else ""
-        gql = (
+        extra_filter: str,
+        include_parent: bool,
+    ) -> str:
+        return (
             """query Search {
           Get { %s(
             where: %s,
@@ -175,35 +180,15 @@ class WeaviateRetriever:
         }"""  # noqa: UP031
             % (
                 self.collection,
-                where,
+                self._where(tenant, groups, "chunk", extra_filter),
                 limit,
                 escaped,
                 json.dumps(vector),
-                parent_field,
+                "parentText " if include_parent else "",
             )
         )
-        started = perf_counter()
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.post(
-                f"{self.url}/v1/graphql",
-                headers=self.headers,
-                json={"query": gql},
-            )
-            response.raise_for_status()
-        payload = response.json()
-        if payload.get("errors") and include_parent and "parentText" in str(payload["errors"]):
-            return await self._search_chunks(
-                escaped,
-                vector,
-                tenant,
-                groups,
-                limit,
-                extra_filter,
-                include_parent=False,
-            )
-        if payload.get("errors"):
-            raise RuntimeError(payload["errors"][0]["message"])
-        rows = payload.get("data", {}).get("Get", {}).get(self.collection, [])
+
+    def _log_search(self, tenant: str, rows: list[dict], started: float) -> None:
         # Single shared collection across tenants (CLAUDE.md constraint): logging
         # per-query result count and latency here is what lets an operator later
         # notice a noisy tenant diluting another tenant's candidate pool.
@@ -216,35 +201,42 @@ class WeaviateRetriever:
                 "duration_ms": (perf_counter() - started) * 1000,
             },
         )
-        return [
-            Evidence(
-                id=row["nodeId"],
-                document_id=row["documentId"],
-                document_title=row["documentTitle"],
-                text=row["text"],
-                page=row.get("page"),
-                section=row.get("section"),
-                score=float(row.get("_additional", {}).get("score") or 0),
-                acl_groups=set(row.get("aclGroups") or []) - {"__public__"},
-                context_text=row.get("parentText") or row["text"],
-            )
-            for row in rows
-        ]
 
-    async def _summary_sources(
+    async def _search_chunks(
         self,
         escaped: str,
         vector: list[float] | None,
         tenant: str,
         groups: str,
         limit: int,
-    ) -> list[str]:
+        extra_filter: str = "",
+        include_parent: bool = True,
+    ) -> list[Evidence]:
+        started = perf_counter()
+        payload = await self._post_graphql(
+            self._chunk_query(escaped, vector, tenant, groups, limit, extra_filter, include_parent)
+        )
+        if payload.get("errors") and include_parent and "parentText" in str(payload["errors"]):
+            # Rolling-upgrade safety: retry without the optional property until
+            # ingestion's schema reconciliation adds it.
+            return await self._search_chunks(
+                escaped, vector, tenant, groups, limit, extra_filter, include_parent=False
+            )
+        if payload.get("errors"):
+            raise RuntimeError(payload["errors"][0]["message"])
+        rows = payload.get("data", {}).get("Get", {}).get(self.collection, [])
+        self._log_search(tenant, rows, started)
+        return [_chunk_evidence(row) for row in rows]
+
+    async def _root_summaries(
+        self, escaped: str, vector: list[float] | None, tenant: str, groups: str, limit: int
+    ) -> list[dict]:
         rows = await self._summary_rows(
             escaped,
             vector,
             tenant,
             groups,
-            min(limit, 8),
+            limit,
             ',{path:["isRoot"],operator:Equal,valueBoolean:true},'
             '{path:["summaryScope"],operator:Equal,valueText:"corpus"}',
         )
@@ -254,14 +246,25 @@ class WeaviateRetriever:
                 vector,
                 tenant,
                 groups,
-                min(limit, 8),
+                limit,
                 ',{path:["isRoot"],operator:Equal,valueBoolean:true}',
             )
+        return rows
+
+    async def _summary_sources(
+        self,
+        escaped: str,
+        vector: list[float] | None,
+        tenant: str,
+        groups: str,
+        limit: int,
+    ) -> list[str]:
+        rows = await self._root_summaries(escaped, vector, tenant, groups, min(limit, 8))
         for _ in range(12):
-            sources = list(dict.fromkeys(key for row in rows for key in row.get("sourceKeys", [])))
+            sources = _unique_keys(rows, "sourceKeys")
             if sources:
                 return sources
-            children = list(dict.fromkeys(key for row in rows for key in row.get("childIds", [])))
+            children = _unique_keys(rows, "childIds")
             if not children:
                 break
             rows = await self._summary_rows(
@@ -274,7 +277,7 @@ class WeaviateRetriever:
             )
         # Collapsed-tree fallback prevents an early branch choice from hiding evidence.
         rows = await self._summary_rows(escaped, vector, tenant, groups, min(limit, 20))
-        return list(dict.fromkeys(key for row in rows for key in row.get("sourceKeys", [])))
+        return _unique_keys(rows, "sourceKeys")
 
     async def _summary_rows(
         self,
@@ -285,31 +288,41 @@ class WeaviateRetriever:
         limit: int,
         extra_filter: str = "",
     ) -> list[dict]:
-        where = (
-            "{operator:And,operands:["
-            f'{{path:["tenantId"],operator:Equal,valueText:{tenant}}},'
-            f'{{path:["indexVersion"],operator:Equal,valueText:{json.dumps(self.index_version)}}},'
-            f'{{path:["aclGroups"],operator:ContainsAny,valueText:{groups}}},'
-            f'{{path:["nodeType"],operator:Equal,valueText:"summary"}}{extra_filter}'
-            "]}"
-        )
         gql = """query Navigate {
           Get { %s(where:%s,limit:%d,hybrid:{query:"%s",vector:%s,alpha:0.5}) {
             nodeId childIds sourceKeys _additional { score }
           }}
-        }""" % (self.collection, where, min(limit, 20), escaped, json.dumps(vector))  # noqa: UP031
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.post(
-                f"{self.url}/v1/graphql", headers=self.headers, json={"query": gql}
-            )
-            response.raise_for_status()
-        payload = response.json()
+        }""" % (  # noqa: UP031
+            self.collection,
+            self._where(tenant, groups, "summary", extra_filter),
+            min(limit, 20),
+            escaped,
+            json.dumps(vector),
+        )
+        payload = await self._post_graphql(gql)
         if payload.get("errors") and "summaryScope" in str(payload["errors"]):
             return []
         if payload.get("errors"):
             raise RuntimeError(payload["errors"][0]["message"])
-        rows = payload.get("data", {}).get("Get", {}).get(self.collection, [])
-        return rows
+        return payload.get("data", {}).get("Get", {}).get(self.collection, [])
+
+
+def _chunk_evidence(row: dict) -> Evidence:
+    return Evidence(
+        id=row["nodeId"],
+        document_id=row["documentId"],
+        document_title=row["documentTitle"],
+        text=row["text"],
+        page=row.get("page"),
+        section=row.get("section"),
+        score=float(row.get("_additional", {}).get("score") or 0),
+        acl_groups=set(row.get("aclGroups") or []) - {"__public__"},
+        context_text=row.get("parentText") or row["text"],
+    )
+
+
+def _unique_keys(rows: list[dict], field: str) -> list[str]:
+    return list(dict.fromkeys(key for row in rows for key in row.get(field, [])))
 
 
 _TRAVERSAL_CYPHER = """
@@ -410,20 +423,7 @@ class Neo4jRetriever:
         if not rows:
             return []
         ranked = _personalized_pagerank(rows, terms, tuple(seed_keys))
-        return [
-            Evidence(
-                id=row["id"],
-                document_id=row["document_id"],
-                document_title=row["document_title"],
-                text=row["text"],
-                page=row.get("page"),
-                section=row.get("section"),
-                score=score,
-                acl_groups=set(row.get("acl_groups") or []),
-                context_text=row["text"],
-            )
-            for row, score in ranked[:limit]
-        ]
+        return [_statement_evidence(row, score) for row, score in ranked[:limit]]
 
     async def _traverse(
         self, terms: list[str], seed_keys: list[str], auth: AuthContext, limit: int
@@ -461,28 +461,31 @@ class Neo4jRetriever:
 _STOP_WORDS = {"and", "are", "for", "from", "how", "the", "this", "was", "what", "why"}
 
 
-def _query_terms(query: str) -> list[str]:
-    return sorted(
-        {
-            term.strip(".,?!:;()[]{}\"'").casefold()
-            for term in query.split()
-            if len(term.strip(".,?!:;()[]{}\"'")) > 2
-            and term.strip(".,?!:;()[]{}\"'").casefold() not in _STOP_WORDS
-        }
+def _statement_evidence(row: dict, score: float) -> Evidence:
+    return Evidence(
+        id=row["id"],
+        document_id=row["document_id"],
+        document_title=row["document_title"],
+        text=row["text"],
+        page=row.get("page"),
+        section=row.get("section"),
+        score=score,
+        acl_groups=set(row.get("acl_groups") or []),
+        context_text=row["text"],
     )
 
 
-def _personalized_pagerank(
-    rows: list[dict],
-    terms: list[str],
-    seed_keys: tuple[str, ...] = (),
-    *,
-    damping: float = 0.85,
-    iterations: int = 20,
-) -> list[tuple[dict, float]]:
+def _query_terms(query: str) -> list[str]:
+    terms = (term.strip(".,?!:;()[]{}\"'").casefold() for term in query.split())
+    return sorted({term for term in terms if len(term) > 2 and term not in _STOP_WORDS})
+
+
+def _statement_entity_graph(
+    rows: list[dict], terms: list[str], seed_keys: set[str]
+) -> tuple[dict[str, set[str]], dict[str, float]]:
+    """Builds the bipartite statement-entity adjacency and the personalization seeds."""
     adjacency: dict[str, set[str]] = {}
     seeds: dict[str, float] = {}
-    seed_key_set = set(seed_keys)
     for row in rows:
         statement = f"s:{row['id']}"
         keys = (row["subject_key"], row["object_key"])
@@ -497,10 +500,22 @@ def _personalized_pagerank(
             matches = sum(term in entity.casefold() for term in terms)
             if matches:
                 seeds[entity] = float(matches)
-            if key in seed_key_set:
+            if key in seed_keys:
                 # Embedding-seeded fallback: the entity itself is the seed signal
                 # since there's no lexical term match to score it by.
                 seeds[entity] = max(seeds.get(entity, 0.0), 1.0)
+    return adjacency, seeds
+
+
+def _personalized_pagerank(
+    rows: list[dict],
+    terms: list[str],
+    seed_keys: tuple[str, ...] = (),
+    *,
+    damping: float = 0.85,
+    iterations: int = 20,
+) -> list[tuple[dict, float]]:
+    adjacency, seeds = _statement_entity_graph(rows, terms, set(seed_keys))
     if not seeds:
         return []
     seed_total = sum(seeds.values())

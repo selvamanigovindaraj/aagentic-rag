@@ -52,20 +52,24 @@ class PostgresStore:
                 job.model_calls,
                 job.created_at,
             )
-            await connection.execute(
-                """INSERT INTO ingestion_job_events
-                (job_id,tenant_id,status,stage,progress,attempt,model_calls,index_version,error)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""",
-                job.id,
-                job.tenant_id,
-                job.status,
-                job.stage,
-                job.progress,
-                job.attempts,
-                job.model_calls,
-                job.index_version,
-                job.error,
-            )
+            await self._insert_job_event(connection, job)
+
+    @staticmethod
+    async def _insert_job_event(executor, job: IngestionJob) -> None:
+        await executor.execute(
+            """INSERT INTO ingestion_job_events
+            (job_id,tenant_id,status,stage,progress,attempt,model_calls,index_version,error)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""",
+            job.id,
+            job.tenant_id,
+            job.status,
+            job.stage,
+            job.progress,
+            job.attempts,
+            job.model_calls,
+            job.index_version,
+            job.error,
+        )
 
     async def find_duplicate(
         self, tenant_id: str, content_hash: str, groups: frozenset[str]
@@ -135,20 +139,7 @@ class PostgresStore:
             job.index_version,
             job.model_calls,
         )
-        await self.pool.execute(
-            """INSERT INTO ingestion_job_events
-            (job_id,tenant_id,status,stage,progress,attempt,model_calls,index_version,error)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""",
-            job.id,
-            job.tenant_id,
-            job.status,
-            job.stage,
-            job.progress,
-            job.attempts,
-            job.model_calls,
-            job.index_version,
-            job.error,
-        )
+        await self._insert_job_event(self.pool, job)
 
     async def claim_ingestion_job(
         self, worker_id: str, *, lease_seconds: int, index_version: str = "v1"

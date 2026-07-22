@@ -18,6 +18,45 @@ from .ingestion import Chunk
 
 logger = logging.getLogger(__name__)
 
+_MERGE_STATEMENTS_CYPHER = """
+MERGE (d:Document {tenant_id: $tenant, id: $document_id})
+SET d.title = $title, d.version = $version, d.acl_groups = $acl_groups
+WITH d
+UNWIND $rows AS row
+MERGE (subject:Entity {tenant_id: $tenant, key: row.subject_key})
+ON CREATE SET subject.name = row.subject
+MERGE (object:Entity {tenant_id: $tenant, key: row.object_key})
+ON CREATE SET object.name = row.object
+CREATE (s:Statement {
+  id: row.id, tenant_id: $tenant, document_id: $document_id,
+  index_version: $index_version,
+  version: $version, acl_groups: $acl_groups, text: row.text,
+  predicate: row.predicate, date: coalesce(row.date, ''), page: row.page,
+  section: row.section, source_text: row.source_text
+})
+MERGE (s)-[:SUBJECT]->(subject)
+MERGE (s)-[:OBJECT]->(object)
+MERGE (s)-[:SUPPORTED_BY]->(d)
+"""
+
+
+def _synonym_pairs(
+    entities: list[str], vectors: list[list[float]], *, threshold: float = 0.92
+) -> list[dict]:
+    pairs = []
+    for left in range(len(entities)):
+        for right in range(left + 1, len(entities)):
+            score = cosine_similarity(vectors[left], vectors[right])
+            if score >= threshold and entities[left].casefold() != entities[right].casefold():
+                pairs.append(
+                    {
+                        "left": entities[left].casefold().strip(),
+                        "right": entities[right].casefold().strip(),
+                        "score": score,
+                    }
+                )
+    return pairs
+
 
 class OpenStatement(BaseModel):
     subject: str = Field(min_length=1, max_length=300)
@@ -99,31 +138,31 @@ class Neo4jIndexer:
             document_id=str(document.id),
         )
 
+    async def _extract_statements(self, text: str) -> list[OpenStatement] | None:
+        try:
+            raw = await self.models.complete(
+                [
+                    {"role": "system", "content": prompt("open-triples:v1")},
+                    {"role": "user", "content": f"<evidence>\n{text}\n</evidence>"},
+                ],
+                json_output=True,
+            )
+            return StatementBatch.model_validate_json(raw).statements
+        except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
+            # One chunk's extraction failing (token-limit truncation, an
+            # over-length statement batch) must not sacrifice the whole
+            # document -- vector indexing already succeeded by this stage,
+            # and other chunks' triples are still worth keeping.
+            logger.warning("triple_extraction_call_failed", extra={"reason": type(exc).__name__})
+            return None
+
     async def _extract(self, chunks: list[Chunk]) -> list[ProvenancedStatement]:
         parents: dict[str, Chunk] = {}
         for chunk in chunks:
             parents.setdefault(chunk.parent_text, chunk)
         result: list[ProvenancedStatement] = []
         for text, chunk in parents.items():
-            try:
-                raw = await self.models.complete(
-                    [
-                        {"role": "system", "content": prompt("open-triples:v1")},
-                        {"role": "user", "content": f"<evidence>\n{text}\n</evidence>"},
-                    ],
-                    json_output=True,
-                )
-                batch = StatementBatch.model_validate_json(raw)
-            except (ValueError, json.JSONDecodeError, OpenAIError) as exc:
-                # One chunk's extraction failing (token-limit truncation, an
-                # over-length statement batch) must not sacrifice the whole
-                # document -- vector indexing already succeeded by this stage,
-                # and other chunks' triples are still worth keeping.
-                logger.warning(
-                    "triple_extraction_call_failed", extra={"reason": type(exc).__name__}
-                )
-                continue
-            for item in batch.statements:
+            for item in await self._extract_statements(text) or []:
                 if is_grounded(item.subject, text) and is_grounded(item.object, text):
                     result.append(ProvenancedStatement(item, chunk.page, chunk.section, text))
                 else:
@@ -136,38 +175,37 @@ class Neo4jIndexer:
                     )
         return result
 
+    def _statement_row(self, document: Document, item: ProvenancedStatement) -> dict:
+        triple = item.statement
+        identity = ":".join(
+            [
+                self.index_version,
+                str(document.id),
+                str(document.version),
+                triple.subject,
+                triple.predicate,
+                triple.object,
+                str(item.page),
+            ]
+        )
+        return {
+            "id": str(uuid5(NAMESPACE_URL, identity)),
+            "subject": triple.subject,
+            "subject_key": triple.subject.casefold().strip(),
+            "predicate": triple.predicate,
+            "object": triple.object,
+            "object_key": triple.object.casefold().strip(),
+            "text": f"{triple.subject} {triple.predicate} {triple.object}",
+            "date": triple.date,
+            "page": item.page,
+            "section": item.section,
+            "source_text": item.source_text,
+        }
+
     async def _replace_statements(
         self, document: Document, statements: list[ProvenancedStatement]
     ) -> None:
-        rows = []
-        for item in statements:
-            triple = item.statement
-            identity = ":".join(
-                [
-                    self.index_version,
-                    str(document.id),
-                    str(document.version),
-                    triple.subject,
-                    triple.predicate,
-                    triple.object,
-                    str(item.page),
-                ]
-            )
-            rows.append(
-                {
-                    "id": str(uuid5(NAMESPACE_URL, identity)),
-                    "subject": triple.subject,
-                    "subject_key": triple.subject.casefold().strip(),
-                    "predicate": triple.predicate,
-                    "object": triple.object,
-                    "object_key": triple.object.casefold().strip(),
-                    "text": f"{triple.subject} {triple.predicate} {triple.object}",
-                    "date": triple.date,
-                    "page": item.page,
-                    "section": item.section,
-                    "source_text": item.source_text,
-                }
-            )
+        rows = [self._statement_row(document, item) for item in statements]
         await self.driver.execute_query(
             """
             MATCH (old:Statement {
@@ -179,28 +217,8 @@ class Neo4jIndexer:
             document_id=str(document.id),
             index_version=self.index_version,
         )
-        cypher = """
-        MERGE (d:Document {tenant_id: $tenant, id: $document_id})
-        SET d.title = $title, d.version = $version, d.acl_groups = $acl_groups
-        WITH d
-        UNWIND $rows AS row
-        MERGE (subject:Entity {tenant_id: $tenant, key: row.subject_key})
-        ON CREATE SET subject.name = row.subject
-        MERGE (object:Entity {tenant_id: $tenant, key: row.object_key})
-        ON CREATE SET object.name = row.object
-        CREATE (s:Statement {
-          id: row.id, tenant_id: $tenant, document_id: $document_id,
-          index_version: $index_version,
-          version: $version, acl_groups: $acl_groups, text: row.text,
-          predicate: row.predicate, date: coalesce(row.date, ''), page: row.page,
-          section: row.section, source_text: row.source_text
-        })
-        MERGE (s)-[:SUBJECT]->(subject)
-        MERGE (s)-[:OBJECT]->(object)
-        MERGE (s)-[:SUPPORTED_BY]->(d)
-        """
         await self.driver.execute_query(
-            cypher,
+            _MERGE_STATEMENTS_CYPHER,
             tenant=document.tenant_id,
             document_id=str(document.id),
             title=document.title,
@@ -224,18 +242,7 @@ class Neo4jIndexer:
             return
         vectors = await self.embedder.embed(entities, "document")
         await self._persist_entity_embeddings(document.tenant_id, entities, vectors)
-        pairs = []
-        for left in range(len(entities)):
-            for right in range(left + 1, len(entities)):
-                score = cosine_similarity(vectors[left], vectors[right])
-                if score >= 0.92 and entities[left].casefold() != entities[right].casefold():
-                    pairs.append(
-                        {
-                            "left": entities[left].casefold().strip(),
-                            "right": entities[right].casefold().strip(),
-                            "score": score,
-                        }
-                    )
+        pairs = _synonym_pairs(entities, vectors)
         if not pairs:
             return
         await self.driver.execute_query(

@@ -11,14 +11,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from redis.asyncio import Redis
 
 from .api.routes import router
-from .components.hybrid_retriever import (
-    ActiveDocumentRetriever,
-    CachedRetriever,
-    CompositeRetriever,
-    Neo4jRetriever,
-    RerankingRetriever,
-    WeaviateRetriever,
-)
+from .components.hybrid_retriever import Neo4jRetriever, build_retrieval_stack
 from .components.llm import DeepSeekGateway
 from .components.object_store import S3ObjectStore
 from .components.voyage import VoyageGateway
@@ -28,7 +21,6 @@ from .core.logging import configure_logging
 from .repositories.postgres import PostgresStore
 from .services.events import MemoryEventBroker, RedisEventBroker
 from .services.rag_pipeline import RagPipeline
-from .services.semantic_cache import SemanticCache
 
 # Uvicorn configures its own "uvicorn.*" loggers but not the root logger, so
 # app.* loggers (propagate=True) would otherwise fall through to Python's
@@ -65,27 +57,7 @@ async def lifespan(app: FastAPI):
         )
         try:
             store = PostgresStore(pool, settings.index_version)
-            retriever = ActiveDocumentRetriever(
-                CachedRetriever(
-                    RerankingRetriever(
-                        CompositeRetriever(
-                            WeaviateRetriever(
-                                settings.weaviate_url,
-                                settings.weaviate_api_key,
-                                voyage,
-                                settings.weaviate_collection,
-                                settings.index_version,
-                            ),
-                            graph,
-                        ),
-                        voyage,
-                        settings.max_reranked_candidates,
-                    ),
-                    SemanticCache(redis),
-                    settings.index_version,
-                ),
-                store,
-            )
+            retriever = build_retrieval_stack(settings, voyage, graph, redis, store)
             app.state.store = store
             app.state.events = RedisEventBroker(redis)
             app.state.agent = RagPipeline(

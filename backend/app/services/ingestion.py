@@ -65,6 +65,10 @@ def parse_document(path: str | Path) -> ParsedDocument:
             "UNSUPPORTED_DOCUMENT",
             "Only PDF, DOCX, PPTX, TXT, and Markdown are supported",
         )
+    return _parse_text(path)
+
+
+def _parse_text(path: Path) -> ParsedDocument:
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
@@ -88,20 +92,7 @@ def parse_ooxml(path: str | Path) -> ParsedDocument:
                 blocks, artifacts = _docx_blocks(archive)
                 page_count = 1
             else:
-                slide_names = sorted(
-                    (
-                        name
-                        for name in archive.namelist()
-                        if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)
-                    ),
-                    key=lambda name: int(re.search(r"\d+", name).group()),
-                )
-                blocks = [
-                    block
-                    for page, name in enumerate(slide_names, 1)
-                    for block in _pptx_blocks(archive.read(name), page)
-                ]
-                page_count = len(slide_names)
+                blocks, page_count = _pptx_document_blocks(archive)
                 artifacts = []
     except (OSError, zipfile.BadZipFile, KeyError, ElementTree.ParseError) as exc:
         raise AppError(
@@ -112,6 +103,37 @@ def parse_ooxml(path: str | Path) -> ParsedDocument:
     return ParsedDocument(tuple(blocks), page_count, (), tuple(artifacts))
 
 
+def _pptx_document_blocks(archive: zipfile.ZipFile) -> tuple[list[TextBlock], int]:
+    slide_names = sorted(
+        (name for name in archive.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)),
+        key=lambda name: int(re.search(r"\d+", name).group()),
+    )
+    blocks = [
+        block
+        for page, name in enumerate(slide_names, 1)
+        for block in _pptx_blocks(archive.read(name), page)
+    ]
+    return blocks, len(slide_names)
+
+
+def _docx_paragraph(element, namespace: str) -> tuple[str, bool]:
+    text = "".join(item.text or "" for item in element.iter(f"{namespace}t")).strip()
+    style = element.find(f".//{namespace}pStyle")
+    heading = bool(style is not None and style.get(f"{namespace}val", "").startswith("Heading"))
+    return text, heading
+
+
+def _docx_table_text(element, namespace: str) -> str:
+    rows = [
+        " | ".join(
+            "".join(item.text or "" for item in cell.iter(f"{namespace}t")).strip()
+            for cell in row.findall(f"{namespace}tc")
+        )
+        for row in element.findall(f"{namespace}tr")
+    ]
+    return "\n".join(row for row in rows if row.strip(" |"))
+
+
 def _docx_blocks(archive: zipfile.ZipFile) -> tuple[list[TextBlock], list[LayoutArtifact]]:
     root = ElementTree.fromstring(archive.read("word/document.xml"))
     namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
@@ -120,20 +142,9 @@ def _docx_blocks(archive: zipfile.ZipFile) -> tuple[list[TextBlock], list[Layout
     artifacts: list[LayoutArtifact] = []
     for element in body if body is not None else ():
         if element.tag == f"{namespace}p":
-            text = "".join(item.text or "" for item in element.iter(f"{namespace}t")).strip()
-            style = element.find(f".//{namespace}pStyle")
-            heading = bool(
-                style is not None and style.get(f"{namespace}val", "").startswith("Heading")
-            )
+            text, heading = _docx_paragraph(element, namespace)
         elif element.tag == f"{namespace}tbl":
-            rows = [
-                " | ".join(
-                    "".join(item.text or "" for item in cell.iter(f"{namespace}t")).strip()
-                    for cell in row.findall(f"{namespace}tc")
-                )
-                for row in element.findall(f"{namespace}tr")
-            ]
-            text, heading = "\n".join(row for row in rows if row.strip(" |")), False
+            text, heading = _docx_table_text(element, namespace), False
             if text:
                 artifacts.append(LayoutArtifact("table", 1, (0.0, 0.0, 0.0, 0.0), text))
         else:
@@ -157,19 +168,28 @@ def _pptx_blocks(content: bytes, page: int) -> list[TextBlock]:
     ]
 
 
-def chunk_document(
-    document: ParsedDocument, *, child_words: int = 200, parent_words: int = 1_000
-) -> list[Chunk]:
-    chunks: list[Chunk] = []
+def _provenanced_words(
+    document: ParsedDocument,
+) -> list[tuple[str, int, str | None, tuple[float, float, float, float]]]:
+    """Flatten blocks to (word, page, section, bbox); headings become section labels."""
+    words: list[tuple[str, int, str | None, tuple[float, float, float, float]]] = []
     section: str | None = None
-    section_words: list[tuple[str, int, str | None, tuple[float, float, float, float]]] = []
     for block in document.blocks:
         if block.heading:
             section = block.text
         else:
-            section_words.extend(
-                (word, block.page, section, block.bbox) for word in block.text.split()
-            )
+            words.extend((word, block.page, section, block.bbox) for word in block.text.split())
+    return words
+
+
+def chunk_document(
+    document: ParsedDocument, *, child_words: int = 200, parent_words: int = 1_000
+) -> list[Chunk]:
+    # ponytail: hand-rolled instead of langchain-text-splitters because the
+    # per-word (page, section, bbox) provenance must survive into each Chunk
+    # for citations; a generic splitter only preserves text.
+    chunks: list[Chunk] = []
+    section_words = _provenanced_words(document)
     for parent_start in range(0, len(section_words), parent_words):
         parent = section_words[parent_start : parent_start + parent_words]
         parent_text = " ".join(word for word, _, _, _ in parent)
@@ -215,6 +235,12 @@ class WeaviateIndexer:
         chunks = chunks if chunks is not None else chunk_document(parse_document(path))
         if not chunks:
             raise AppError(422, "EMPTY_DOCUMENT", "The document contains no searchable text")
+        objects = await self._document_objects(document, chunks)
+        await self.delete(document)
+        await self._upload_objects(objects)
+        return len(objects)
+
+    async def _document_objects(self, document: Document, chunks: list[Chunk]) -> list[dict]:
         from .raptor import build_raptor
 
         summaries = await build_raptor(chunks, self.models, self.embedder)
@@ -231,23 +257,25 @@ class WeaviateIndexer:
                 zip(parents, vectors[len(chunks) :], strict=True)
             )
         )
-        objects.extend(
-            self._object(
-                document,
-                summary.key,
-                summary.text,
-                "summary",
-                summary.vector,
-                page=summary.page,
-                section=summary.section,
-                level=summary.level,
-                child_ids=list(summary.child_ids),
-                source_ids=list(summary.source_ids),
-                is_root=summary.is_root,
-            )
-            for summary in summaries
+        objects.extend(self._summary_object(document, summary) for summary in summaries)
+        return objects
+
+    def _summary_object(self, document: Document, summary) -> dict:
+        return self._object(
+            document,
+            summary.key,
+            summary.text,
+            "summary",
+            summary.vector,
+            page=summary.page,
+            section=summary.section,
+            level=summary.level,
+            child_ids=list(summary.child_ids),
+            source_ids=list(summary.source_ids),
+            is_root=summary.is_root,
         )
-        await self.delete(document)
+
+    async def _upload_objects(self, objects: list[dict]) -> None:
         response = await self.client.post(
             f"{self.url}/v1/batch/objects", headers=self.headers, json={"objects": objects}
         )
@@ -265,9 +293,8 @@ class WeaviateIndexer:
         )
         if failures:
             raise AppError(502, "WEAVIATE_INDEX_FAILED", "Weaviate rejected indexed objects")
-        return len(objects)
 
-    async def delete(self, document: Document) -> None:
+    async def _batch_delete(self, operands: list[dict]) -> None:
         response = await self.client.request(
             "DELETE",
             f"{self.url}/v1/batch/objects",
@@ -275,58 +302,33 @@ class WeaviateIndexer:
             json={
                 "match": {
                     "class": self.collection,
-                    "where": {
-                        "operator": "And",
-                        "operands": [
-                            {
-                                "path": ["tenantId"],
-                                "operator": "Equal",
-                                "valueText": document.tenant_id,
-                            },
-                            {
-                                "path": ["documentId"],
-                                "operator": "Equal",
-                                "valueText": str(document.id),
-                            },
-                            {
-                                "path": ["indexVersion"],
-                                "operator": "Equal",
-                                "valueText": self.index_version,
-                            },
-                        ],
-                    },
+                    "where": {"operator": "And", "operands": operands},
                 }
             },
         )
         response.raise_for_status()
 
+    async def delete(self, document: Document) -> None:
+        await self._batch_delete(
+            [
+                {"path": ["tenantId"], "operator": "Equal", "valueText": document.tenant_id},
+                {"path": ["documentId"], "operator": "Equal", "valueText": str(document.id)},
+                {"path": ["indexVersion"], "operator": "Equal", "valueText": self.index_version},
+            ]
+        )
+
     async def rebuild_corpus(self, document: Document) -> int:
         """Rebuild the upper corpus tree for one exact ACL cohort."""
         await self._ensure_schema()
         cohort = acl_cohort(document.acl_groups)
-        roots = await self._document_roots(document.tenant_id, cohort)
-        known = {row["nodeId"] for row in roots}
-        roots.extend(
-            row
-            for row in await self._legacy_document_roots(
-                document.tenant_id, document.acl_groups
-            )
-            if row["nodeId"] not in known
-        )
+        roots = await self._all_document_roots(document, cohort)
         await self._delete_corpus(document.tenant_id, cohort)
         if len(roots) < 2:
             return 0
         from .raptor import build_summary_tree
 
         nodes = [
-            (
-                row["nodeId"],
-                row["text"],
-                None,
-                None,
-                row["_additional"]["vector"],
-                (),
-            )
+            (row["nodeId"], row["text"], None, None, row["_additional"]["vector"], ())
             for row in roots
         ]
         summaries = await build_summary_tree(
@@ -338,6 +340,26 @@ class WeaviateIndexer:
         )
         response.raise_for_status()
         return len(objects)
+
+    async def _all_document_roots(self, document: Document, cohort: str) -> list[dict]:
+        roots = await self._document_roots(document.tenant_id, cohort)
+        known = {row["nodeId"] for row in roots}
+        roots.extend(
+            row
+            for row in await self._legacy_document_roots(document.tenant_id, document.acl_groups)
+            if row["nodeId"] not in known
+        )
+        return roots
+
+    async def _graphql_rows(self, gql: str) -> list[dict]:
+        response = await self.client.post(
+            f"{self.url}/v1/graphql", headers=self.headers, json={"query": gql}
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("errors"):
+            raise AppError(502, "WEAVIATE_QUERY_FAILED", payload["errors"][0]["message"])
+        return payload.get("data", {}).get("Get", {}).get(self.collection, [])
 
     async def _document_roots(self, tenant_id: str, cohort: str) -> list[dict]:
         rows: list[dict] = []
@@ -363,14 +385,7 @@ class WeaviateIndexer:
                     cursor,
                 )
             )
-            response = await self.client.post(
-                f"{self.url}/v1/graphql", headers=self.headers, json={"query": gql}
-            )
-            response.raise_for_status()
-            payload = response.json()
-            if payload.get("errors"):
-                raise AppError(502, "WEAVIATE_QUERY_FAILED", payload["errors"][0]["message"])
-            page = payload.get("data", {}).get("Get", {}).get(self.collection, [])
+            page = await self._graphql_rows(gql)
             rows.extend(page)
             if len(page) < 1000:
                 return rows
@@ -392,14 +407,7 @@ class WeaviateIndexer:
             json.dumps(tenant_id),
             json.dumps(self.index_version),
         )
-        response = await self.client.post(
-            f"{self.url}/v1/graphql", headers=self.headers, json={"query": gql}
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if payload.get("errors"):
-            raise AppError(502, "WEAVIATE_QUERY_FAILED", payload["errors"][0]["message"])
-        rows = payload.get("data", {}).get("Get", {}).get(self.collection, [])
+        rows = await self._graphql_rows(gql)
         expected = groups or {"__public__"}
         return [
             row
@@ -409,34 +417,14 @@ class WeaviateIndexer:
         ]
 
     async def _delete_corpus(self, tenant_id: str, cohort: str) -> None:
-        response = await self.client.request(
-            "DELETE",
-            f"{self.url}/v1/batch/objects",
-            headers=self.headers,
-            json={
-                "match": {
-                    "class": self.collection,
-                    "where": {
-                        "operator": "And",
-                        "operands": [
-                            {"path": ["tenantId"], "operator": "Equal", "valueText": tenant_id},
-                            {
-                                "path": ["indexVersion"],
-                                "operator": "Equal",
-                                "valueText": self.index_version,
-                            },
-                            {"path": ["aclCohort"], "operator": "Equal", "valueText": cohort},
-                            {
-                                "path": ["summaryScope"],
-                                "operator": "Equal",
-                                "valueText": "corpus",
-                            },
-                        ],
-                    },
-                }
-            },
+        await self._batch_delete(
+            [
+                {"path": ["tenantId"], "operator": "Equal", "valueText": tenant_id},
+                {"path": ["indexVersion"], "operator": "Equal", "valueText": self.index_version},
+                {"path": ["aclCohort"], "operator": "Equal", "valueText": cohort},
+                {"path": ["summaryScope"], "operator": "Equal", "valueText": "corpus"},
+            ]
         )
-        response.raise_for_status()
 
     async def _ensure_schema(self) -> None:
         response = await self.client.get(
@@ -612,6 +600,12 @@ def _page_layout(
     page: pymupdf.Page, page_number: int
 ) -> tuple[list[TextBlock], list[LayoutArtifact]]:
     raw = page.get_text("dict", sort=True).get("blocks", [])
+    return _page_text_blocks(raw, page_number), _page_artifacts(page, raw, page_number)
+
+
+def _page_artifacts(
+    page: pymupdf.Page, raw: list[dict], page_number: int
+) -> list[LayoutArtifact]:
     artifacts = [
         LayoutArtifact("figure", page_number, tuple(float(value) for value in block["bbox"]))
         for block in raw
@@ -629,6 +623,10 @@ def _page_layout(
         )
     except (AttributeError, ValueError):
         pass
+    return artifacts
+
+
+def _body_font_size(raw: list[dict]) -> float:
     sizes = [
         span["size"]
         for block in raw
@@ -637,7 +635,11 @@ def _page_layout(
         for span in line.get("spans", [])
         if span.get("text", "").strip()
     ]
-    body_size = median(sizes) if sizes else 0
+    return median(sizes) if sizes else 0
+
+
+def _page_text_blocks(raw: list[dict], page_number: int) -> list[TextBlock]:
+    body_size = _body_font_size(raw)
     result: list[TextBlock] = []
     for block in raw:
         if block.get("type") != 0:
@@ -655,4 +657,4 @@ def _page_layout(
                 heading=max_size >= body_size * 1.25 and len(text) <= 200,
             )
         )
-    return result, artifacts
+    return result

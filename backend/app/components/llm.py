@@ -70,6 +70,12 @@ class DeepSeekGateway:
                 "tags": [model_name, self.settings.index_version],
             },
         )
+        self._track_usage(response, use_pro)
+        if not response.text:
+            raise ValueError("DeepSeek returned empty content")
+        return response.text
+
+    def _track_usage(self, response: AIMessage, use_pro: bool) -> None:
         usage = response.usage_metadata or {}
         input_tokens = int(usage.get("input_tokens", 0))
         output_tokens = int(usage.get("output_tokens", 0))
@@ -84,6 +90,3 @@ class DeepSeekGateway:
         self.estimated_cost_usd += (
             input_tokens * input_rate + output_tokens * output_rate
         ) / 1_000_000
-        if not response.text:
-            raise ValueError("DeepSeek returned empty content")
-        return response.text

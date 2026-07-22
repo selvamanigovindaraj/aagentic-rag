@@ -36,6 +36,83 @@ def get_store(request: Request) -> Store:
     return request.app.state.store
 
 
+async def _validated_upload(request: Request, form) -> tuple[UploadFile, bytes]:
+    upload = form.get("file")
+    if not isinstance(upload, UploadFile):
+        raise AppError(422, "FILE_REQUIRED", "A document file is required")
+    content = await upload.read()
+    if not content:
+        raise AppError(422, "EMPTY_DOCUMENT", "The uploaded document is empty")
+    if len(content) > request.app.state.settings.max_upload_bytes:
+        raise AppError(413, "DOCUMENT_TOO_LARGE", "The uploaded document exceeds the limit")
+    return upload, content
+
+
+def _parsed_revision(value: object) -> UUID | None:
+    try:
+        return UUID(str(value)) if value else None
+    except ValueError as exc:
+        raise AppError(422, "INVALID_REVISION", "revision_of must be a UUID") from exc
+
+
+async def _store_upload_object(
+    request: Request, auth: AuthContext, upload: UploadFile, content: bytes
+) -> str:
+    suffix = Path(upload.filename or "document").suffix.lower()
+    object_key = f"{auth.tenant_id}/{uuid4()}{suffix}"
+    object_store = getattr(request.app.state, "object_store", None)
+    if object_store:
+        await object_store.put(object_key, content, upload.content_type)
+    else:
+        path = Path(request.app.state.settings.object_storage_path) / object_key
+        path.parent.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(path.write_bytes, content)
+    return object_key
+
+
+async def _payload_from_upload(
+    request: Request, auth: AuthContext, store: Store
+) -> DocumentCreate | DocumentAccepted:
+    """Turns a multipart upload into a DocumentCreate, or short-circuits on a duplicate."""
+    form = await request.form()
+    upload, content = await _validated_upload(request, form)
+    content_hash = hashlib.sha256(content).hexdigest()
+    revision_of = _parsed_revision(form.get("revision_of"))
+    if not revision_of:
+        # Checked before storing the object so a duplicate never uploads its bytes.
+        duplicate = await store.find_duplicate(auth.tenant_id, content_hash, auth.groups)
+        if duplicate:
+            document, job = duplicate
+            return DocumentAccepted(document=document, ingestion_job=job)
+    return DocumentCreate(
+        title=str(form.get("title") or upload.filename or "Document"),
+        object_key=await _store_upload_object(request, auth, upload, content),
+        acl_groups={
+            item.strip() for item in str(form.get("acl_groups") or "").split(",") if item.strip()
+        },
+        content_hash=content_hash,
+        revision_of=revision_of,
+    )
+
+
+async def _revision_lineage(
+    store: Store, auth: AuthContext, revision_of: UUID | None
+) -> tuple[int, UUID | None]:
+    if not revision_of:
+        return 1, None
+    base = await store.get_document(revision_of)
+    if not base or base.tenant_id != auth.tenant_id or not visible(base.acl_groups, auth.groups):
+        raise AppError(404, "DOCUMENT_NOT_FOUND", "Revision source not found")
+    return base.version + 1, base.logical_id
+
+
+async def _enqueue_ingestion(state, job: IngestionJob) -> None:
+    if hasattr(state, "ingestion_jobs"):
+        state.ingestion_jobs.append(str(job.id))
+    elif hasattr(state, "redis"):
+        await state.redis.rpush("ingestion:jobs", str(job.id))
+
+
 @router.post("/documents", response_model=DocumentAccepted, status_code=status.HTTP_202_ACCEPTED)
 async def create_document(
     request: Request,
@@ -43,47 +120,9 @@ async def create_document(
     store: Store = Depends(get_store),
 ):
     if request.headers.get("content-type", "").startswith("multipart/form-data"):
-        form = await request.form()
-        upload = form.get("file")
-        if not isinstance(upload, UploadFile):
-            raise AppError(422, "FILE_REQUIRED", "A document file is required")
-        content = await upload.read()
-        if not content:
-            raise AppError(422, "EMPTY_DOCUMENT", "The uploaded document is empty")
-        if len(content) > request.app.state.settings.max_upload_bytes:
-            raise AppError(413, "DOCUMENT_TOO_LARGE", "The uploaded document exceeds the limit")
-        title = str(form.get("title") or upload.filename or "Document")
-        groups = {
-            item.strip() for item in str(form.get("acl_groups") or "").split(",") if item.strip()
-        }
-        content_hash = hashlib.sha256(content).hexdigest()
-        revision_value = form.get("revision_of")
-        try:
-            revision_of = UUID(str(revision_value)) if revision_value else None
-        except ValueError as exc:
-            raise AppError(422, "INVALID_REVISION", "revision_of must be a UUID") from exc
-        if not revision_of:
-            duplicate = await store.find_duplicate(auth.tenant_id, content_hash, auth.groups)
-            if duplicate:
-                document, job = duplicate
-                return DocumentAccepted(document=document, ingestion_job=job)
-        document_id = uuid4()
-        suffix = Path(upload.filename or "document").suffix.lower()
-        object_key = f"{auth.tenant_id}/{document_id}{suffix}"
-        object_store = getattr(request.app.state, "object_store", None)
-        if object_store:
-            await object_store.put(object_key, content, upload.content_type)
-        else:
-            path = Path(request.app.state.settings.object_storage_path) / object_key
-            path.parent.mkdir(parents=True, exist_ok=True)
-            await asyncio.to_thread(path.write_bytes, content)
-        payload = DocumentCreate(
-            title=title,
-            object_key=object_key,
-            acl_groups=groups,
-            content_hash=content_hash,
-            revision_of=revision_of,
-        )
+        payload = await _payload_from_upload(request, auth, store)
+        if isinstance(payload, DocumentAccepted):
+            return payload
     else:
         payload = DocumentCreate.model_validate(await request.json())
     if not payload.object_key:
@@ -97,18 +136,7 @@ async def create_document(
         if duplicate:
             document, job = duplicate
             return DocumentAccepted(document=document, ingestion_job=job)
-    version = 1
-    logical_id = None
-    if payload.revision_of:
-        base = await store.get_document(payload.revision_of)
-        if (
-            not base
-            or base.tenant_id != auth.tenant_id
-            or not visible(base.acl_groups, auth.groups)
-        ):
-            raise AppError(404, "DOCUMENT_NOT_FOUND", "Revision source not found")
-        logical_id = base.logical_id
-        version = base.version + 1
+    version, logical_id = await _revision_lineage(store, auth, payload.revision_of)
     document = Document(
         tenant_id=auth.tenant_id,
         logical_id=logical_id,
@@ -122,10 +150,7 @@ async def create_document(
         index_version=request.app.state.settings.index_version,
     )
     await store.create_document(document, job)
-    if hasattr(request.app.state, "ingestion_jobs"):
-        request.app.state.ingestion_jobs.append(str(job.id))
-    elif hasattr(request.app.state, "redis"):
-        await request.app.state.redis.rpush("ingestion:jobs", str(job.id))
+    await _enqueue_ingestion(request.app.state, job)
     return DocumentAccepted(document=document, ingestion_job=job)
 
 
@@ -190,16 +215,7 @@ async def create_message(
     )
     await store.create_run(run)
     if isinstance(store, MemoryStore):
-        # Hermetic adapter: execute synchronously because there is deliberately
-        # no external worker in unit/API tests. Production always uses leases.
-        result = await request.app.state.agent.run(run.query, auth, str(run.id))
-        citations = [Citation.model_validate(item) for item in result.get("citations", [])]
-        await store.save_citations(citations)
-        run.route = result.get("route")
-        run.answer = result.get("answer")
-        run.citation_ids = [item.id for item in citations]
-        run.status = "complete"
-        await store.update_run(run)
+        await _complete_run_inline(request, auth, store, run)
         return RunAccepted(run_id=run.id, events_url=f"/api/v1/chat/runs/{run.id}/events")
     try:
         await request.app.state.redis.rpush("chat:runs", str(run.id))
@@ -209,9 +225,34 @@ async def create_message(
     return RunAccepted(run_id=run.id, events_url=f"/api/v1/chat/runs/{run.id}/events")
 
 
+async def _complete_run_inline(
+    request: Request, auth: AuthContext, store: Store, run: ChatRun
+) -> None:
+    # Hermetic adapter: execute synchronously because there is deliberately
+    # no external worker in unit/API tests. Production always uses leases.
+    result = await request.app.state.agent.run(run.query, auth, str(run.id))
+    citations = [Citation.model_validate(item) for item in result.get("citations", [])]
+    await store.save_citations(citations)
+    run.route = result.get("route")
+    run.answer = result.get("answer")
+    run.citation_ids = [item.id for item in citations]
+    run.status = "complete"
+    await store.update_run(run)
+
+
 async def stream_events(events: AsyncIterator[dict]) -> AsyncIterator[str]:
     async for event in events:
         yield f"data: {json.dumps(event)}\n\n"
+
+
+async def _completed_run_events(run: ChatRun) -> AsyncIterator[str]:
+    payload = {
+        "type": "answer",
+        "content": run.answer,
+        "citations": [str(item) for item in run.citation_ids],
+    }
+    yield f"data: {json.dumps(payload)}\n\n"
+    yield 'data: {"type": "complete"}\n\n'
 
 
 @router.get("/chat/runs/{run_id}/events")
@@ -225,17 +266,7 @@ async def run_events(
     if not run or run.user_id != auth.subject:
         raise AppError(404, "RUN_NOT_FOUND", "Chat run not found")
     if run.status == "complete":
-
-        async def completed():
-            payload = {
-                "type": "answer",
-                "content": run.answer,
-                "citations": [str(item) for item in run.citation_ids],
-            }
-            yield f"data: {json.dumps(payload)}\n\n"
-            yield 'data: {"type": "complete"}\n\n'
-
-        return StreamingResponse(completed(), media_type="text/event-stream")
+        return StreamingResponse(_completed_run_events(run), media_type="text/event-stream")
     return StreamingResponse(
         stream_events(request.app.state.events.stream(run.id)),
         media_type="text/event-stream",
