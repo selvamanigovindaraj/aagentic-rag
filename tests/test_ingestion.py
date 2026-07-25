@@ -7,7 +7,14 @@ import pytest
 from app.core.errors import AppError
 from app.schemas.domain import Document
 from app.services.graph_index import Neo4jIndexer
-from app.services.ingestion import Chunk, WeaviateIndexer, chunk_document, parse_document, parse_pdf
+from app.services.ingestion import (
+    Chunk,
+    WeaviateIndexer,
+    _sentence_safe_windows,
+    chunk_document,
+    parse_document,
+    parse_pdf,
+)
 from app.services.raptor import _reduce_dimensions, build_raptor
 
 
@@ -72,6 +79,46 @@ def test_plain_text_is_chunked_with_parent_context(tmp_path: Path):
     assert chunks[0].section == "Architecture"
     assert len(chunks[0].text.split()) == 200
     assert len(chunks[0].parent_text.split()) >= 520
+
+
+def _word(text: str) -> tuple[str, int, str | None, tuple[float, float, float, float]]:
+    return (text, 1, None, (0.0, 0.0, 0.0, 0.0))
+
+
+def test_sentence_safe_windows_trims_to_last_sentence_and_carries_remainder_forward():
+    # A period lands at index 5 (0-indexed); a window_size of 10 would otherwise
+    # cut mid-sentence at index 10, inside the second sentence.
+    words = [_word("word0"), _word("word1"), _word("word2"), _word("word3"),
+             _word("word4"), _word("word5."), _word("word6"), _word("word7"),
+             _word("word8"), _word("word9"), _word("word10"), _word("word11")]
+
+    windows = _sentence_safe_windows(words, window_size=10)
+
+    assert [w[0] for w in windows[0]] == [
+        "word0", "word1", "word2", "word3", "word4", "word5.",
+    ]
+    assert [w[0] for w in windows[1]] == [
+        "word6", "word7", "word8", "word9", "word10", "word11",
+    ]
+    assert sum(windows, []) == words
+
+
+def test_last_window_is_never_trimmed_even_mid_sentence():
+    words = [_word(f"word{index}") for index in range(15)]
+
+    windows = _sentence_safe_windows(words, window_size=10)
+
+    assert len(windows) == 2
+    assert windows[1] == words[10:]
+
+
+def test_window_without_any_sentence_boundary_falls_back_to_raw_cut():
+    words = [_word(f"word{index}") for index in range(30)]
+
+    windows = _sentence_safe_windows(words, window_size=10)
+
+    assert [len(w) for w in windows] == [10, 10, 10]
+    assert sum(windows, []) == words
 
 
 def test_docx_preserves_headings_and_table_rows(tmp_path: Path):

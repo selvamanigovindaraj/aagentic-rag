@@ -168,11 +168,12 @@ def _pptx_blocks(content: bytes, page: int) -> list[TextBlock]:
     ]
 
 
-def _provenanced_words(
-    document: ParsedDocument,
-) -> list[tuple[str, int, str | None, tuple[float, float, float, float]]]:
+ProvenancedWord = tuple[str, int, str | None, tuple[float, float, float, float]]
+
+
+def _provenanced_words(document: ParsedDocument) -> list[ProvenancedWord]:
     """Flatten blocks to (word, page, section, bbox); headings become section labels."""
-    words: list[tuple[str, int, str | None, tuple[float, float, float, float]]] = []
+    words: list[ProvenancedWord] = []
     section: str | None = None
     for block in document.blocks:
         if block.heading:
@@ -182,6 +183,32 @@ def _provenanced_words(
     return words
 
 
+def _ends_sentence(word: str) -> bool:
+    return word.rstrip("\"')]").endswith((".", "!", "?"))
+
+
+def _sentence_safe_windows(
+    words: list[ProvenancedWord], window_size: int
+) -> list[list[ProvenancedWord]]:
+    """Slice into ~window_size groups without cutting a sentence: a would-be
+    mid-sentence window trims to the last sentence-ending word, carrying the tail
+    into the next window (the last window is never trimmed).
+    ponytail: punctuation heuristic, not an NLP tokenizer (none installed; fooled
+    by "Dr." etc) -- acceptable chunk-boundary ceiling."""
+    windows = []
+    start, total = 0, len(words)
+    while start < total:
+        end = min(start + window_size, total)
+        if end < total:
+            boundary = end
+            while boundary > start and not _ends_sentence(words[boundary - 1][0]):
+                boundary -= 1
+            end = boundary if boundary > start else end
+        windows.append(words[start:end])
+        start = end
+    return windows
+
+
 def chunk_document(
     document: ParsedDocument, *, child_words: int = 200, parent_words: int = 1_000
 ) -> list[Chunk]:
@@ -189,23 +216,12 @@ def chunk_document(
     # per-word (page, section, bbox) provenance must survive into each Chunk
     # for citations; a generic splitter only preserves text.
     chunks: list[Chunk] = []
-    section_words = _provenanced_words(document)
-    for parent_start in range(0, len(section_words), parent_words):
-        parent = section_words[parent_start : parent_start + parent_words]
+    for parent in _sentence_safe_windows(_provenanced_words(document), parent_words):
         parent_text = " ".join(word for word, _, _, _ in parent)
-        for child_start in range(0, len(parent), child_words):
-            child = parent[child_start : child_start + child_words]
-            if child:
-                chunks.append(
-                    Chunk(
-                        index=len(chunks),
-                        text=" ".join(word for word, _, _, _ in child),
-                        parent_text=parent_text,
-                        page=child[0][1],
-                        section=child[0][2],
-                        bbox=child[0][3],
-                    )
-                )
+        for child in _sentence_safe_windows(parent, child_words):
+            text = " ".join(word for word, _, _, _ in child)
+            first = child[0]
+            chunks.append(Chunk(len(chunks), text, parent_text, first[1], first[2], first[3]))
     return chunks
 
 

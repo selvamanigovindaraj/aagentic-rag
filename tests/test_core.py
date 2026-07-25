@@ -422,8 +422,15 @@ async def test_corpus_rebuilds_coalesce_until_ingestion_batch_drains():
 
 
 @pytest.mark.asyncio
-async def test_raptor_traverses_corpus_root_to_original_chunk_ids(monkeypatch):
+async def test_raptor_flat_search_ranks_all_levels_then_resolves_corpus_hits(monkeypatch):
+    """Flat (collapsed-tree) retrieval: one unscoped similarity query ranks summary
+    nodes at every level together (no isRoot walk); a corpus-scope hit that comes
+    back with empty sourceKeys (see ingestion.py's _corpus_object -- corpus nodes
+    store childIds only, to avoid unbounded arrays) still needs one bounded
+    resolution hop down to a node with real sourceKeys."""
     from app.components.retrieval import WeaviateRetriever
+
+    calls: list[str] = []
 
     class Response:
         def __init__(self, rows):
@@ -443,7 +450,8 @@ async def test_raptor_traverses_corpus_root_to_original_chunk_ids(monkeypatch):
             return None
 
         async def post(self, url, headers, json):
-            if "summaryScope" in json["query"]:
+            calls.append(json["query"])
+            if len(calls) == 1:
                 return Response(
                     [{"nodeId": "corpus", "childIds": ["document-root"], "sourceKeys": []}]
                 )
@@ -457,6 +465,8 @@ async def test_raptor_traverses_corpus_root_to_original_chunk_ids(monkeypatch):
     )
 
     assert sources == ["chunk-1"]
+    assert len(calls) == 2, "expected one ranking query + one bounded resolution hop"
+    assert "isRoot" not in calls[0], "primary ranking query must be unscoped (flat)"
 
 
 def test_postgres_chat_run_decodes_jsonb_metrics():

@@ -228,29 +228,6 @@ class WeaviateRetriever:
         self._log_search(tenant, rows, started)
         return [_chunk_evidence(row) for row in rows]
 
-    async def _root_summaries(
-        self, escaped: str, vector: list[float] | None, tenant: str, groups: str, limit: int
-    ) -> list[dict]:
-        rows = await self._summary_rows(
-            escaped,
-            vector,
-            tenant,
-            groups,
-            limit,
-            ',{path:["isRoot"],operator:Equal,valueBoolean:true},'
-            '{path:["summaryScope"],operator:Equal,valueText:"corpus"}',
-        )
-        if not rows:
-            rows = await self._summary_rows(
-                escaped,
-                vector,
-                tenant,
-                groups,
-                limit,
-                ',{path:["isRoot"],operator:Equal,valueBoolean:true}',
-            )
-        return rows
-
     async def _summary_sources(
         self,
         escaped: str,
@@ -259,25 +236,33 @@ class WeaviateRetriever:
         groups: str,
         limit: int,
     ) -> list[str]:
-        rows = await self._root_summaries(escaped, vector, tenant, groups, min(limit, 8))
-        for _ in range(12):
-            sources = _unique_keys(rows, "sourceKeys")
-            if sources:
-                return sources
-            children = _unique_keys(rows, "childIds")
+        """Flat (collapsed-tree) RAPTOR retrieval: rank every summary node -- any
+        level, any scope -- by similarity in ONE query, instead of walking
+        isRoot -> childIds top-down (matches the RAPTOR paper's own finding that
+        collapsed-tree retrieval performs as well as layer-by-layer traversal).
+        Corpus-scope nodes store childIds only, not sourceKeys (see ingestion.py's
+        _corpus_object, "avoid unbounded arrays"), so any corpus-scope hits among
+        the ranked results still need one bounded resolution hop; document-scope
+        hits already carry sourceKeys directly and skip it entirely."""
+        rows = await self._summary_rows(escaped, vector, tenant, groups, min(limit, 20))
+        return await self._resolve_source_keys(rows, escaped, vector, tenant, groups)
+
+    async def _resolve_source_keys(
+        self, rows: list[dict], escaped: str, vector: list[float] | None, tenant: str, groups: str
+    ) -> list[str]:
+        resolved: dict[str, None] = {}
+        # ponytail: bounded hop limit for childIds-only corpus chains -- raise this
+        # or give corpus nodes real sourceKeys directly if 6 hops isn't enough.
+        for _ in range(6):
+            for key in _unique_keys(rows, "sourceKeys"):
+                resolved.setdefault(key)
+            children = _unique_keys([row for row in rows if not row.get("sourceKeys")], "childIds")
             if not children:
                 break
             rows = await self._summary_rows(
-                escaped,
-                vector,
-                tenant,
-                groups,
-                min(limit, 20),
-                ',{path:["nodeId"],operator:ContainsAny,valueText:' + json.dumps(children) + "}",
+                escaped, vector, tenant, groups, min(len(children), 20), _children_filter(children)
             )
-        # Collapsed-tree fallback prevents an early branch choice from hiding evidence.
-        rows = await self._summary_rows(escaped, vector, tenant, groups, min(limit, 20))
-        return _unique_keys(rows, "sourceKeys")
+        return list(resolved)
 
     async def _summary_rows(
         self,
@@ -300,8 +285,6 @@ class WeaviateRetriever:
             json.dumps(vector),
         )
         payload = await self._post_graphql(gql)
-        if payload.get("errors") and "summaryScope" in str(payload["errors"]):
-            return []
         if payload.get("errors"):
             raise RuntimeError(payload["errors"][0]["message"])
         return payload.get("data", {}).get("Get", {}).get(self.collection, [])
@@ -323,6 +306,10 @@ def _chunk_evidence(row: dict) -> Evidence:
 
 def _unique_keys(rows: list[dict], field: str) -> list[str]:
     return list(dict.fromkeys(key for row in rows for key in row.get(field, [])))
+
+
+def _children_filter(children: list[str]) -> str:
+    return ',{path:["nodeId"],operator:ContainsAny,valueText:' + json.dumps(children) + "}"
 
 
 _TRAVERSAL_CYPHER = """
