@@ -18,6 +18,7 @@ from .components.voyage import VoyageGateway
 from .core.config import get_settings
 from .core.errors import AppError, app_error_handler
 from .core.logging import configure_logging
+from .core.tracing import configure_tracing
 from .repositories.postgres import PostgresStore
 from .services.events import MemoryEventBroker, RedisEventBroker
 from .services.rag_pipeline import RagPipeline
@@ -27,6 +28,7 @@ from .services.rag_pipeline import RagPipeline
 # "last resort" handler, which only surfaces WARNING+ and drops INFO events
 # like the weaviate_search retrieval instrumentation entirely.
 configure_logging()
+configure_tracing()
 
 
 @asynccontextmanager

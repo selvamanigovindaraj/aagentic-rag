@@ -12,7 +12,8 @@
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "Sam Bankman-Fried was a terrible boyfriend",
       "The FTX trial is bigger than Sam Bankman-Fried"
-    ]
+    ],
+    "expected_answer": "Sam Bankman-Fried"
   },
   {
     "name": "Who is the individual implicated in court for planning an expert board for FTX w",
@@ -26,7 +27,8 @@
       "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "Sex, Signal messages, and sabotaging FTX's code: SBF execs and Bahamas roommates tell all in court"
-    ]
+    ],
+    "expected_answer": "Sam Bankman-Fried"
   },
   {
     "name": "Who is the individual reported by TechCrunch to have offered $5 billion to a for",
@@ -41,7 +43,8 @@
       "SBF\u2019s trial starts soon, but how did he \u2014 and FTX \u2014 get here?",
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "The jury finally hears from Sam Bankman-Fried"
-    ]
+    ],
+    "expected_answer": "Sam Bankman-Fried"
   },
   {
     "name": "What company, mentioned in articles by both TechCrunch and The Verge, is respons",
@@ -55,7 +58,8 @@
       "Early impressions of Google\u2019s Gemini aren\u2019t great",
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "Tim Sweeney on Epic\u2019s victory royale over Google"
-    ]
+    ],
+    "expected_answer": "Google"
   },
   {
     "name": "Who is the individual accused of using Caroline Ellison as a front for secretive",
@@ -70,7 +74,8 @@
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "Sex, Signal messages, and sabotaging FTX's code: SBF execs and Bahamas roommates tell all in court",
       "The FTX trial is bigger than Sam Bankman-Fried"
-    ]
+    ],
+    "expected_answer": "Sam Bankman-Fried"
   },
   {
     "name": "Which country, discussed in articles from both Hacker News and Zee Business, ban",
@@ -83,7 +88,8 @@
     "expected_document_titles": [
       "How the conspiracy-fueled Epoch Times went mainstream and made millions",
       "India to be one of world's fastest growing economies over next decade"
-    ]
+    ],
+    "expected_answer": "China"
   },
   {
     "name": "Which company, known for its dominance in the e-reader space and providing life-",
@@ -98,7 +104,8 @@
       "78 Absolute Best October Prime Day Deals (2023)",
       "Amazon sellers sound off on the FTC's 'long-overdue' antitrust case",
       "Here are the best Kindle deals right now"
-    ]
+    ],
+    "expected_answer": "Amazon"
   },
   {
     "name": "Which institution, recently reported by 'The Age' to have raised its main intere",
@@ -113,7 +120,8 @@
       "ASX set to open higher as Wall Street rebounds; $A rises",
       "ASX set to open lower as Wall Street closes September with more losses",
       "ASX to rise after interest rate hopes boost US shares"
-    ]
+    ],
+    "expected_answer": "The Federal Reserve"
   },
   {
     "name": "Who is the individual whose legal circumstances are under scrutiny, who previous",
@@ -127,7 +135,8 @@
       "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "Sam Bankman-Fried was a terrible boyfriend"
-    ]
+    ],
+    "expected_answer": "Sam Bankman-Fried"
   },
   {
     "name": "Who is the individual that, prior to the downfall of a cryptocurrency platform, ",
@@ -142,7 +151,8 @@
       "SBF\u2019s trial starts soon, but how did he \u2014 and FTX \u2014 get here?",
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "The FTX trial is bigger than Sam Bankman-Fried"
-    ]
+    ],
+    "expected_answer": "Sam Bankman-Fried"
   },
   {
     "name": "Do the 'Eos: Earth And Space Science News' researchers and 'Music Business World",
@@ -155,7 +165,8 @@
     "expected_document_titles": [
       "La desigualdad del estr\u00e9s por calor",
       "\u2018AfroFuture\u2019s vision is to bring African art, cuisine, fashion, and music to a global audience.\u2019"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Does the article from The Verge claim that the Google Nest Thermostat's compatib",
@@ -168,7 +179,8 @@
     "expected_document_titles": [
       "Teenage Engineering's K.O. II sampler proves the company can do cost-friendly cool",
       "The best Prime Day smart home deals"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Did 'The Verge' article imply that Alameda Research was treated the same as othe",
@@ -181,7 +193,8 @@
     "expected_document_titles": [
       "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
       "Sam Bankman-Fried was a terrible boyfriend"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Does the 'Fortune' article suggest that Sam Altman's prominence in the AI field ",
@@ -194,7 +207,8 @@
     "expected_document_titles": [
       "OpenAI's ex-chairman accuses board of going rogue in firing Altman: 'Sam and I are shocked and saddened by what the board did'",
       "WTF is going on at OpenAI? We have theories"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Does the article from Wired suggest that Sony headphones offer the best value in",
@@ -207,7 +221,8 @@
     "expected_document_titles": [
       "These Are Our Favorite Walmart Cyber Monday Deals",
       "\u2018Latin artists have been paving the way for deals that offer more control, transparency, and better economics.\u2019"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Did the 'Fortune' article suggest that Beyonc\u00e9's 'Renaissance' concert film was ",
@@ -220,7 +235,8 @@
     "expected_document_titles": [
       "Beyonc\u00e9\u00a0tops box office with $21 million debut for concert film \u2018Renaissance\u2019",
       "Travis Kelce faces backlash after comments about \u2018finding a breeder\u2019 resurface amid Taylor Swift romance"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Does the article from The Verge suggest that Apple's choice of Google as a searc",
@@ -234,7 +250,8 @@
       "Apple defends Google Search deal in court: \u2018There wasn\u2019t a valid alternative\u2019",
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "What to know about Fortnite maker Epic Games\u2019 antitrust battle with Google, starting today"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Do the TechCrunch articles suggest that European AI startups and Ylva Johansson'",
@@ -247,7 +264,8 @@
     "expected_document_titles": [
       "EU commissioner sidesteps MEPs\u2019 questions about CSAM microtargeting",
       "There\u2019s something going on with AI startups in France"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Does the TechCrunch article claim that Google's release of the Gemini Pro model ",
@@ -261,7 +279,8 @@
       "Google fakes an AI demo, Grand Theft Auto VI goes viral and Spotify cuts jobs",
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "The people who ruined the internet"
-    ]
+    ],
+    "expected_answer": "True"
   },
   {
     "name": "Does 'The Guardian' article describe 'the match' as a contest of disparity betwe",
@@ -274,7 +293,8 @@
     "expected_document_titles": [
       "Chelsea secure last-eight spot after Raheem Sterling sinks Blackburn",
       "Shohei Ohtani rumors tracker: Latest news, updates on Dodgers, Cubs & more as free agency short list emerges"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Did 'TechCrunch' report a situation involving Paul Denino not obtaining consent ",
@@ -287,7 +307,8 @@
     "expected_document_titles": [
       "Britney Spears and Kevin Federline: A complete timeline of their relationship",
       "Kick streamers consider leaving over CEO\u2019s comments in a sex worker \u2018prank\u2019 stream"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Did the TechCrunch report on October 7, 2023, concerning Dave Clark's comments o",
@@ -300,7 +321,8 @@
     "expected_document_titles": [
       "Cruise hits the brakes on driverless, UAW makes progress and more EV backpedaling",
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Was there a discrepancy in the reporting of Google's anticompetitive practices b",
@@ -314,7 +336,8 @@
       "5 things we learned so far about the Google antitrust case",
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "What to know about Fortnite maker Epic Games\u2019 antitrust battle with Google, starting today"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "Between the TechCrunch report on Epic Games' antitrust battle with Google publis",
@@ -328,7 +351,8 @@
       "Early impressions of Google\u2019s Gemini aren\u2019t great",
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "What to know about Fortnite maker Epic Games\u2019 antitrust battle with Google, starting today"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Between the report from The Verge on Apple's defense of its Google Search deal p",
@@ -342,7 +366,8 @@
       "5 things we learned so far about the Google antitrust case",
       "Apple defends Google Search deal in court: \u2018There wasn\u2019t a valid alternative\u2019",
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line"
-    ]
+    ],
+    "expected_answer": "no"
   },
   {
     "name": "After Sporting News reported on Liam Paro's ranking slip to 11th due to inactivi",
@@ -355,7 +380,8 @@
     "expected_document_titles": [
       "Liam Paro responds to Shakur Stevenson sparring clip ahead of return vs. Montana Love",
       "Tennis News: Kyrgios escalates beef with Becker, change \u2018warrior\u2019 Novak had to make, WTA criticised for charisma fail"
-    ]
+    ],
+    "expected_answer": "Consistent"
   },
   {
     "name": "After the report by The Verge on October 20, 2023, about Ray-Ban Meta smart glas",
@@ -368,7 +394,8 @@
     "expected_document_titles": [
       "62% of TikTok users in the United States pay for a music streaming service (report)",
       "The Ray-Ban Meta smart glasses actually make the future look cool"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "Between the TechCrunch report on Epic Games' antitrust battle with Google publis",
@@ -381,7 +408,8 @@
     "expected_document_titles": [
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "What to know about Fortnite maker Epic Games\u2019 antitrust battle with Google, starting today"
-    ]
+    ],
+    "expected_answer": "Yes"
   },
   {
     "name": "After The Independent - Life and Style reported on 2023-10-01 that internet slee",
@@ -394,7 +422,8 @@
     "expected_document_titles": [
       "Fasting could reduce signs of Alzheimer\u2019s disease, studies suggest: \u2018Profound effects\u2019",
       "Sleepy tea, counting backwards and dense earplugs: Inside the lives of insomniacs"
-    ]
+    ],
+    "expected_answer": "Agreement"
   },
   {
     "name": "After the TechCrunch report on November 18, 2023, suggesting that Sam Altman was",
@@ -408,6 +437,7 @@
       "A timeline of Sam Altman\u2019s firing from OpenAI \u2014 and the fallout",
       "OpenAI's ex-chairman accuses board of going rogue in firing Altman: 'Sam and I are shocked and saddened by what the board did'",
       "WTF is going on at OpenAI? We have theories"
-    ]
+    ],
+    "expected_answer": "no"
   }
 ]

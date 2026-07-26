@@ -120,7 +120,12 @@ class WeaviateRetriever:
     async def retrieve(
         self, query: str, route: Route, auth: AuthContext, limit: int
     ) -> list[Evidence]:
-        escaped = query.replace("\\", "\\\\").replace('"', '\\"')
+        # GraphQL string-literal escaping is JSON's: json.dumps also escapes
+        # newlines/control characters that a bare backslash+quote replace
+        # missed (a query with an embedded newline broke the raw GraphQL
+        # request with "Unterminated string"). Already includes the
+        # surrounding quotes, so the query templates below embed it bare.
+        escaped = json.dumps(query)
         vector = (await self.embedder.embed([query], "query"))[0] if self.embedder else None
         groups = json.dumps(["__public__", *sorted(auth.groups)])
         tenant = json.dumps(auth.tenant_id)
@@ -172,7 +177,7 @@ class WeaviateRetriever:
           Get { %s(
             where: %s,
             limit: %d,
-            hybrid: {query: \"%s\", vector: %s, alpha: 0.5}
+            hybrid: {query: %s, vector: %s, alpha: 0.5}
           ) {
             nodeId documentId documentTitle text %spage section aclGroups nodeType
             _additional { score }
@@ -274,7 +279,7 @@ class WeaviateRetriever:
         extra_filter: str = "",
     ) -> list[dict]:
         gql = """query Navigate {
-          Get { %s(where:%s,limit:%d,hybrid:{query:"%s",vector:%s,alpha:0.5}) {
+          Get { %s(where:%s,limit:%d,hybrid:{query:%s,vector:%s,alpha:0.5}) {
             nodeId childIds sourceKeys _additional { score }
           }}
         }""" % (  # noqa: UP031

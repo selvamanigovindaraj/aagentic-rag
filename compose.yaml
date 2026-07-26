@@ -31,6 +31,9 @@ services:
       LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-false}
       LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
       LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-agentic-rag}
+      PHOENIX_ENABLED: ${PHOENIX_ENABLED:-false}
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+      PHOENIX_PROJECT_NAME: ${PHOENIX_PROJECT_NAME:-agentic-rag}
       DEV_AUTH: "true"
     ports: ["8000:8000"]
     depends_on:
@@ -47,6 +50,11 @@ services:
       redis: {condition: service_started}
       minio: {condition: service_started}
       neo4j: {condition: service_healthy}
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    environment: {PHOENIX_SQL_DATABASE_URL: sqlite:////data/phoenix.db}
+    ports: ["6006:6006", "4317:4317"]
+    volumes: ["phoenixdata:/data"]
   frontend:
     build: frontend
     ports: ["3000:80"]
@@ -75,4 +83,4 @@ services:
       timeout: 10s
       retries: 10
       start_period: 30s
-volumes: {pgdata: {}, objectdata: {}, neo4jdata: {}}
+volumes: {pgdata: {}, objectdata: {}, neo4jdata: {}, phoenixdata: {}}

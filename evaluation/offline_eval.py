@@ -12,6 +12,19 @@ def route_accuracy(dataset: Path) -> float:
     return correct / len(examples)
 
 
+def _breakdown_route_accuracy(results: list[dict]) -> dict:
+    grouped: dict[str, list[dict]] = {}
+    for item in results:
+        grouped.setdefault(str(item["question_type"]), []).append(item)
+    return {
+        bucket: {
+            "count": len(items),
+            "accuracy": sum(i["correct"] for i in items) / len(items),
+        }
+        for bucket, items in grouped.items()
+    }
+
+
 async def route_accuracy_live(dataset: Path) -> dict:
     """Route accuracy through the real classify path (keyword router + the LLM
     second-pass override), not just the raw keyword function -- this is what
@@ -32,16 +45,21 @@ async def route_accuracy_live(dataset: Path) -> dict:
         results.append(
             {
                 "query": item["query"][:80],
+                "question_type": item.get("question_type"),
                 "expected": item["route"],
                 "actual": str(state["route"]),
                 "correct": str(state["route"]) == item["route"],
             }
         )
     accuracy = sum(item["correct"] for item in results) / len(results)
-    return {"route_accuracy_live": accuracy, "cases": results}
+    breakdown = _breakdown_route_accuracy([r for r in results if r["question_type"]])
+    return {"route_accuracy_live": accuracy, "by_question_type": breakdown, "cases": results}
 
 
 if __name__ == "__main__":
+    from app.core.tracing import configure_tracing
+
+    configure_tracing()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--dataset", type=Path, default=Path(__file__).with_name("golden_dataset.json")

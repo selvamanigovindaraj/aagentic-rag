@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
@@ -181,6 +182,21 @@ def test_weaviate_cloud_credentials_are_attached():
     retriever = WeaviateRetriever("https://cluster.weaviate.network/", "secret")
     assert retriever.url == "https://cluster.weaviate.network"
     assert retriever.headers == {"Authorization": "Bearer secret"}
+
+
+def test_weaviate_chunk_query_escapes_newlines_and_quotes():
+    # A raw newline or unescaped quote in the query breaks the GraphQL request
+    # with "Unterminated string" -- json.dumps' escaping (used for `escaped`)
+    # must survive being embedded directly in the hybrid.query GraphQL field.
+    retriever = WeaviateRetriever("https://cloud", "key")
+    escaped = json.dumps('line one\nline two "quoted"')
+
+    query = retriever._chunk_query(
+        escaped, None, json.dumps("tenant"), json.dumps(["group"]), 10, "", False
+    )
+
+    assert "\n" not in query.split("hybrid:")[1].split("}")[0]
+    assert '\\"quoted\\"' in query
 
 
 @pytest.mark.asyncio

@@ -16,6 +16,9 @@ frontend/dist/
 graphify-out/
 data/processed/
 data/index_config/*.local.*
+data/backup/*
+!data/backup/.gitkeep
 
 # OS
 .DS_Store
+multihop_corpus/

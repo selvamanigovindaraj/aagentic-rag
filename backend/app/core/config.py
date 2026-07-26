@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     index_version: str = "v1"
     langsmith_project: str = "agentic-rag"
     allow_sensitive_tracing: bool = False
+    phoenix_enabled: bool = False
+    phoenix_collector_endpoint: str = "http://localhost:6006/v1/traces"
+    phoenix_project_name: str = "agentic-rag"
 
     @field_validator("weaviate_url")
     @classmethod

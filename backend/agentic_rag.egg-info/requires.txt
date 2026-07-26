@@ -16,6 +16,10 @@ langgraph-checkpoint-postgres<4,>=3
 langsmith<1,>=0.4
 psycopg[binary,pool]<4,>=3.3
 langchain-litellm<1,>=0.2.2
+arize-phoenix-otel>=0.16.1
+openinference-instrumentation-langchain>=0.1.67
+arize-phoenix-client>=2.13.0
+arize-phoenix-evals>=3.3.0
 
 [dev]
 pytest<9,>=8.3

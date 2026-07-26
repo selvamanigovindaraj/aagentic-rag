@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from uuid import uuid4
 
@@ -169,3 +170,64 @@ async def test_voyage_uses_langchain_embedding_and_reranker(monkeypatch):
     assert await gateway.embed(["query"], "query") == [[0.1, 0.2]]
     ranked = await gateway.rerank("query", [evidence], 1)
     assert ranked[0].score == 0.99
+
+
+@pytest.mark.asyncio
+async def test_voyage_rerank_retries_past_a_rate_limit(monkeypatch):
+    import voyageai.error
+
+    attempts = {"count": 0}
+
+    async def compress(reranker, documents, query, callbacks=None):
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            raise voyageai.error.RateLimitError("rate limited")
+        return [
+            Document(
+                page_content=documents[0].page_content,
+                metadata={**documents[0].metadata, "relevance_score": 0.5},
+            )
+        ]
+
+    monkeypatch.setattr(VoyageAIRerank, "acompress_documents", compress)
+    gateway = VoyageGateway(Settings(voyage_api_key="test-key"))
+    evidence = Evidence(
+        id="e1", document_id=uuid4(), document_title="Doc", text="Evidence", score=0.1
+    )
+
+    ranked = await gateway.rerank("query", [evidence], 1)
+
+    assert attempts["count"] == 2
+    assert ranked[0].score == 0.5
+
+
+@pytest.mark.asyncio
+async def test_voyage_bounds_concurrent_calls_regardless_of_caller_concurrency(monkeypatch):
+    concurrent = 0
+    max_concurrent = 0
+    lock = asyncio.Lock()
+
+    async def compress(reranker, documents, query, callbacks=None):
+        nonlocal concurrent, max_concurrent
+        async with lock:
+            concurrent += 1
+            max_concurrent = max(max_concurrent, concurrent)
+        await asyncio.sleep(0.01)
+        async with lock:
+            concurrent -= 1
+        return [
+            Document(
+                page_content=documents[0].page_content,
+                metadata={**documents[0].metadata, "relevance_score": 0.5},
+            )
+        ]
+
+    monkeypatch.setattr(VoyageAIRerank, "acompress_documents", compress)
+    gateway = VoyageGateway(Settings(voyage_api_key="test-key"), max_concurrent_calls=2)
+    evidence = Evidence(
+        id="e1", document_id=uuid4(), document_title="Doc", text="Evidence", score=0.1
+    )
+
+    await asyncio.gather(*(gateway.rerank("q", [evidence], 1) for _ in range(6)))
+
+    assert max_concurrent <= 2

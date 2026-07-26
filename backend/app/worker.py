@@ -10,6 +10,7 @@ from uuid import UUID
 import asyncpg
 import httpx
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from opentelemetry import trace
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
@@ -20,6 +21,7 @@ from .components.voyage import VoyageGateway
 from .core.config import Settings, get_settings
 from .core.errors import AppError
 from .core.logging import configure_logging
+from .core.tracing import configure_tracing
 from .repositories.postgres import PostgresStore
 from .repositories.store import Store
 from .schemas.domain import (
@@ -37,6 +39,13 @@ from .services.ingestion import WeaviateIndexer, chunk_document, parse_document
 from .services.rag_pipeline import RagPipeline
 
 logger = logging.getLogger(__name__)
+# OTEL's API is a safe no-op when no SDK/exporter is configured (Phoenix
+# disabled), so this doesn't need gating on settings.phoenix_enabled -- only
+# parse/chunk/vector-index/graph-index are wrapped here because those aren't
+# LangChain calls and so aren't already covered by LangChainInstrumentor;
+# the RAPTOR/graph-extraction LLM calls inside indexer.index/graph_indexer.index
+# still nest correctly as their own auto-instrumented child spans.
+_tracer = trace.get_tracer("app.worker.ingestion")
 
 
 @dataclass
@@ -145,28 +154,41 @@ async def _ingest_document(
     ctx: _JobContext, previous: Document | None, initial_model_calls: int
 ) -> None:
     job, document = ctx.job, ctx.document
-    parsed = parse_document(ctx.path)
-    await _store_layout_manifest(ctx, parsed)
-    chunks = chunk_document(parsed)
-    job.stage, job.progress = "vector_indexing", 35
-    await ctx.store.update_job(job)
-    await ctx.indexer.index(document, ctx.path, chunks=chunks)
-    job.model_calls = getattr(ctx.indexer.models, "calls", 0) - initial_model_calls
-    job.stage, job.progress = "graph_indexing", 75
-    await ctx.store.update_job(job)
-    await ctx.graph_indexer.index(document, chunks)
-    job.model_calls = getattr(ctx.indexer.models, "calls", 0) - initial_model_calls
-    await ctx.store.activate_document(document)
-    if previous:
-        await ctx.indexer.delete(previous)
-        await ctx.graph_indexer.delete(previous)
-    job.stage, job.progress = "corpus_queued", 90
-    await ctx.store.update_job(job)
-    await ctx.store.request_corpus_rebuild(
-        document.tenant_id, document.acl_groups, ctx.index_version
-    )
-    job.status, job.stage, job.progress = JobStatus.COMPLETE, "complete", 100
-    job.worker_id, job.lease_until = None, None
+    with _tracer.start_as_current_span(
+        "ingest_document",
+        attributes={
+            "document.id": str(document.id),
+            "document.title": document.title,
+            "tenant.id": document.tenant_id,
+        },
+    ):
+        with _tracer.start_as_current_span("parse_document"):
+            parsed = parse_document(ctx.path)
+        await _store_layout_manifest(ctx, parsed)
+        with _tracer.start_as_current_span("chunk_document") as chunk_span:
+            chunks = chunk_document(parsed)
+            chunk_span.set_attribute("chunk.count", len(chunks))
+        job.stage, job.progress = "vector_indexing", 35
+        await ctx.store.update_job(job)
+        with _tracer.start_as_current_span("vector_index"):
+            await ctx.indexer.index(document, ctx.path, chunks=chunks)
+        job.model_calls = getattr(ctx.indexer.models, "calls", 0) - initial_model_calls
+        job.stage, job.progress = "graph_indexing", 75
+        await ctx.store.update_job(job)
+        with _tracer.start_as_current_span("graph_index"):
+            await ctx.graph_indexer.index(document, chunks)
+        job.model_calls = getattr(ctx.indexer.models, "calls", 0) - initial_model_calls
+        await ctx.store.activate_document(document)
+        if previous:
+            await ctx.indexer.delete(previous)
+            await ctx.graph_indexer.delete(previous)
+        job.stage, job.progress = "corpus_queued", 90
+        await ctx.store.update_job(job)
+        await ctx.store.request_corpus_rebuild(
+            document.tenant_id, document.acl_groups, ctx.index_version
+        )
+        job.status, job.stage, job.progress = JobStatus.COMPLETE, "complete", 100
+        job.worker_id, job.lease_until = None, None
 
 
 async def _store_layout_manifest(ctx: _JobContext, parsed) -> None:
@@ -415,4 +437,5 @@ if __name__ == "__main__":
     # (e.g. the weaviate_search instrumentation) even though caplog-based tests
     # can't detect the gap.
     configure_logging()
+    configure_tracing()
     asyncio.run(run())

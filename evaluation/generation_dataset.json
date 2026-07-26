@@ -13,6 +13,7 @@
       "Sam Bankman-Fried was a terrible boyfriend",
       "The FTX trial is bigger than Sam Bankman-Fried"
     ],
+    "expected_answer": "Sam Bankman-Fried",
     "expect_refusal": false
   },
   {
@@ -28,6 +29,7 @@
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "Sex, Signal messages, and sabotaging FTX's code: SBF execs and Bahamas roommates tell all in court"
     ],
+    "expected_answer": "Sam Bankman-Fried",
     "expect_refusal": false
   },
   {
@@ -44,6 +46,7 @@
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "The jury finally hears from Sam Bankman-Fried"
     ],
+    "expected_answer": "Sam Bankman-Fried",
     "expect_refusal": false
   },
   {
@@ -59,6 +62,7 @@
       "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
       "Tim Sweeney on Epic\u2019s victory royale over Google"
     ],
+    "expected_answer": "Google",
     "expect_refusal": false
   },
   {
@@ -75,6 +79,7 @@
       "Sex, Signal messages, and sabotaging FTX's code: SBF execs and Bahamas roommates tell all in court",
       "The FTX trial is bigger than Sam Bankman-Fried"
     ],
+    "expected_answer": "Sam Bankman-Fried",
     "expect_refusal": false
   },
   {
@@ -89,6 +94,7 @@
       "How the conspiracy-fueled Epoch Times went mainstream and made millions",
       "India to be one of world's fastest growing economies over next decade"
     ],
+    "expected_answer": "China",
     "expect_refusal": false
   },
   {
@@ -105,6 +111,7 @@
       "Amazon sellers sound off on the FTC's 'long-overdue' antitrust case",
       "Here are the best Kindle deals right now"
     ],
+    "expected_answer": "Amazon",
     "expect_refusal": false
   },
   {
@@ -121,6 +128,7 @@
       "ASX set to open lower as Wall Street closes September with more losses",
       "ASX to rise after interest rate hopes boost US shares"
     ],
+    "expected_answer": "The Federal Reserve",
     "expect_refusal": false
   },
   {
@@ -136,6 +144,7 @@
       "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
       "Sam Bankman-Fried was a terrible boyfriend"
     ],
+    "expected_answer": "Sam Bankman-Fried",
     "expect_refusal": false
   },
   {

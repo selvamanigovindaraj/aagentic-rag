@@ -22,6 +22,10 @@ Requires-Dist: langgraph-checkpoint-postgres<4,>=3
 Requires-Dist: langsmith<1,>=0.4
 Requires-Dist: psycopg[binary,pool]<4,>=3.3
 Requires-Dist: langchain-litellm<1,>=0.2.2
+Requires-Dist: arize-phoenix-otel>=0.16.1
+Requires-Dist: openinference-instrumentation-langchain>=0.1.67
+Requires-Dist: arize-phoenix-client>=2.13.0
+Requires-Dist: arize-phoenix-evals>=3.3.0
 Provides-Extra: dev
 Requires-Dist: pytest<9,>=8.3; extra == "dev"
 Requires-Dist: pytest-asyncio<2,>=0.25; extra == "dev"
