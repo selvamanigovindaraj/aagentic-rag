@@ -1,0 +1,260 @@
+[
+  {
+    "name": "Who is the individual that, according to different reports from Fortune, The Ver",
+    "query": "Who is the individual that, according to different reports from Fortune, The Verge, and TechCrunch, allegedly used a colleague as a cover for unauthorized financial activities, portrayed a reliable image in the crypto sector before a major company's failure, and is accused by the prosecution of engaging in fraudulent acts for personal gain?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
+      "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
+      "Sam Bankman-Fried was a terrible boyfriend",
+      "The FTX trial is bigger than Sam Bankman-Fried"
+    ],
+    "expected_answer": "Sam Bankman-Fried",
+    "expect_refusal": false
+  },
+  {
+    "name": "Who is the individual implicated in court for planning an expert board for FTX w",
+    "query": "Who is the individual implicated in court for planning an expert board for FTX without investor directors, using a front for secret access to customer funds at Alameda Research, and being accused by the prosecution of committing fraud for personal gain, with these allegations reported by Cnbc | World Business News Leader, Fortune, and TechCrunch respectively?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
+      "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
+      "Sex, Signal messages, and sabotaging FTX's code: SBF execs and Bahamas roommates tell all in court"
+    ],
+    "expected_answer": "Sam Bankman-Fried",
+    "expect_refusal": false
+  },
+  {
+    "name": "Who is the individual reported by TechCrunch to have offered $5 billion to a for",
+    "query": "Who is the individual reported by TechCrunch to have offered $5 billion to a former President to avoid a re-run, pleaded not guilty to charges as per another TechCrunch article, is facing a criminal trial according to the same source, and was mentioned by The Verge as having difficulty managing two companies due to significant growth?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "SBF, riding high on FTX, reportedly offered $5B to Trump to cancel President re-run",
+      "SBF\u2019s trial starts soon, but how did he \u2014 and FTX \u2014 get here?",
+      "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
+      "The jury finally hears from Sam Bankman-Fried"
+    ],
+    "expected_answer": "Sam Bankman-Fried",
+    "expect_refusal": false
+  },
+  {
+    "name": "What company, mentioned in articles by both TechCrunch and The Verge, is respons",
+    "query": "What company, mentioned in articles by both TechCrunch and The Verge, is responsible for creating Gemini, a generative AI model with claimed superior architecture, and is also at the center of discussions regarding Android app distribution, in-app payment systems, and antitrust issues with news publishers?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "Early impressions of Google\u2019s Gemini aren\u2019t great",
+      "News publisher files class action antitrust suit against Google, citing AI\u2019s harms to their bottom line",
+      "Tim Sweeney on Epic\u2019s victory royale over Google"
+    ],
+    "expected_answer": "Google",
+    "expect_refusal": false
+  },
+  {
+    "name": "Who is the individual accused of using Caroline Ellison as a front for secretive",
+    "query": "Who is the individual accused of using Caroline Ellison as a front for secretive access to customer funds, portrayed as a trustworthy cryptocurrency figure before a major company's collapse, discussed board composition with Paradigm in contrast to investor involvement, and is alleged by the prosecution to have committed fraud for personal gain, with connections to reports from Fortune, The Verge, Cnbc | World Business News Leader, and TechCrunch?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
+      "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
+      "Sex, Signal messages, and sabotaging FTX's code: SBF execs and Bahamas roommates tell all in court",
+      "The FTX trial is bigger than Sam Bankman-Fried"
+    ],
+    "expected_answer": "Sam Bankman-Fried",
+    "expect_refusal": false
+  },
+  {
+    "name": "Which country, discussed in articles from both Hacker News and Zee Business, ban",
+    "query": "Which country, discussed in articles from both Hacker News and Zee Business, banned Falun Gong following protests in its capital city in 1999 and is also experiencing growing economic headwinds in contrast to other emerging markets?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "How the conspiracy-fueled Epoch Times went mainstream and made millions",
+      "India to be one of world's fastest growing economies over next decade"
+    ],
+    "expected_answer": "China",
+    "expect_refusal": false
+  },
+  {
+    "name": "Which company, known for its dominance in the e-reader space and providing life-",
+    "query": "Which company, known for its dominance in the e-reader space and providing life-changing opportunities for sellers, has implemented invite-only deals during its Prime Day event and carried over these exclusive offers to subsequent sales events covered by Mashable, Wired, The Verge, and CNBC?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "200+ of the best deals from Amazon's Cyber Monday sale",
+      "78 Absolute Best October Prime Day Deals (2023)",
+      "Amazon sellers sound off on the FTC's 'long-overdue' antitrust case",
+      "Here are the best Kindle deals right now"
+    ],
+    "expected_answer": "Amazon",
+    "expect_refusal": false
+  },
+  {
+    "name": "Which institution, recently reported by 'The Age' to have raised its main intere",
+    "query": "Which institution, recently reported by 'The Age' to have raised its main interest rate to the highest level since 2001 and by 'The Sydney Morning Herald' to potentially halt this trend due to its dominant influence on global financial markets and its data-driven decision-making approach, is anticipated to impact future market conditions?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "ASX set for bright start despite Wall Street slip; $A drops",
+      "ASX set to open higher as Wall Street rebounds; $A rises",
+      "ASX set to open lower as Wall Street closes September with more losses",
+      "ASX to rise after interest rate hopes boost US shares"
+    ],
+    "expected_answer": "The Federal Reserve",
+    "expect_refusal": false
+  },
+  {
+    "name": "Who is the individual whose legal circumstances are under scrutiny, who previous",
+    "query": "Who is the individual whose legal circumstances are under scrutiny, who previously convinced a colleague from Jane Street to join his ventures at Alameda and FTX, is accused of misappropriating $1 billion in customer funds to settle with a competitor, and whose alleged fraudulent actions for personal gain are being prosecuted, as reported by Fortune, The Verge, and TechCrunch?",
+    "route": "multi_hop",
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [
+      "Is Sam Bankman-Fried a bad \u2018man\u2019 or a good \u2018boy\u2019? Lawyers swap opening statements before first witnesses take the stand",
+      "Sam Altman backs teens\u2019 startup, Google unveils the Pixel 8 and TikTok tests an ad-free tier",
+      "Sam Bankman-Fried was a terrible boyfriend"
+    ],
+    "expected_answer": "Sam Bankman-Fried",
+    "expect_refusal": false
+  },
+  {
+    "name": "Based on an article from The New York Times discussing recent technological adva",
+    "query": "Based on an article from The New York Times discussing recent technological advancements and another from The Guardian highlighting key figures in the tech industry, who is the CEO of a company that has introduced a groundbreaking AI technology and also testified before a U.S. Senate committee on data privacy?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the information from an article in The Times of India and another in",
+    "query": "Considering the information from an article in The Times of India and another in The Hindu about Kanika Ahuja, which team, represented by Kanika Ahuja, was mentioned in both articles as having an upcoming tournament and also has a player with the initials 'K.A.'?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Based on the information from two separate articles on Click, which company, kno",
+    "query": "Based on the information from two separate articles on Click, which company, known for its innovative technology solutions and mentioned as a key player in the European market expansion, also faced scrutiny in a second article for potential data privacy issues with its latest product release?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "What is the first letter of the name of the company that, according to an articl",
+    "query": "What is the first letter of the name of the company that, according to an article from The Financial Times, received the most European patents in 2021, and is also mentioned in a Bloomberg article as having faced a significant legal challenge at the European Patent Office over one of its key patents?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the information from an article by Variety and another by The Hollyw",
+    "query": "Considering the information from an article by Variety and another by The Hollywood Reporter on \"Transformers: Rise of the Beasts,\" which character is reported by Variety to have a significant new role in the film and is also mentioned by The Hollywood Reporter as having a notable scene involving a highway chase?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the information from a CNN article and a report by The New York Time",
+    "query": "Considering the information from a CNN article and a report by The New York Times on the recent developments at John Wayne Airport, which airline, mentioned in both sources, has decided to add a new route to its schedule and also recently updated its boarding process to prioritize families with young children?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the latest discounts on electronics reported by Save Bubble and the ",
+    "query": "Considering the latest discounts on electronics reported by Save Bubble and the trends in consumer electronics purchases during the holiday season covered in a separate article on Save Bubble, which brand, known for its smartphones and laptops, has been identified as offering the most significant price reductions on its latest model, which also saw the highest sales increase compared to the previous year?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the financial performance outlined in a Bloomberg article and the st",
+    "query": "Considering the financial performance outlined in a Bloomberg article and the strategic partnerships mentioned in a Wall Street Journal article on American Express Inc., which single letter grade represents the company's credit rating as assessed by a major credit rating agency that takes into account both economic performance and business alliances?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the features highlighted in an article from The Verge about the iPho",
+    "query": "Considering the features highlighted in an article from The Verge about the iPhone 14's camera capabilities and the pricing strategy discussed in a Bloomberg report, which letter represents the starting character of the feature that is both highly praised for its innovation in the first article and is a significant factor in the pricing strategy mentioned in the second article?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  },
+  {
+    "name": "Considering the information from a BBC article detailing Amitabh Bachchan's phil",
+    "query": "Considering the information from a BBC article detailing Amitabh Bachchan's philanthropic efforts and a Times of India report on his recent filmography, which character, portrayed by Amitabh Bachchan, links his role in a movie addressing social issues to his real-life advocacy work as described in these articles?",
+    "route": null,
+    "tenant_id": "eval",
+    "groups": [
+      "research"
+    ],
+    "expected_document_titles": [],
+    "expect_refusal": true
+  }
+]

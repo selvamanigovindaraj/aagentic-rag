@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Env
+.env
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# Data / build artifacts
+graphify-out/
+data/processed/
+data/index_config/*.local.*
+data/backup/*
+!data/backup/.gitkeep
+
+# OS
+.DS_Store
+multihop_corpus/

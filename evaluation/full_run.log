@@ -1,0 +1,151 @@
+waiting for ingestion queue to drain...
+pending=0
+=== ingestion settled ===
+=== retrieval_eval (250-case sample, no LLM calls, concurrency=8) ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+=== offline_eval --live (full, 1 LLM call/query) ===
+Neither llm_api_key nor llm_base_url is set; relying on LiteLLM's provider-specific env var auto-discovery (e.g. DEEPSEEK_API_KEY)
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 475}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 475}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 475}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 475}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 509}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 509}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 509}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 509}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 399}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 399}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 399}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 399}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 482}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 482}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 482}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 482}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 476}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 476}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 476}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 476}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 469}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 469}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 469}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 469}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 343}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 343}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 343}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 343}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 543}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 543}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 543}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 543}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 462}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 462}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 462}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 462}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 288}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 288}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 288}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 288}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 453}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 453}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 453}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 453}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 493}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 493}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 493}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 493}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 365}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 365}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 365}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 365}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 454}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 454}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 454}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 454}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 492}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 492}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 492}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 492}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 271}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 271}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 271}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 271}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 502}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 502}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 502}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 502}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 297}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 297}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 297}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 297}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 349}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 349}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 349}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 349}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 323}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 323}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 323}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 323}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 280}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 280}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 280}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 280}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 507}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 507}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 507}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 507}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 407}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 407}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 407}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 407}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(
+/Users/selvamanigovindaraj/Desktop/workspace/projects/advanced-rag/pocs-agentic-rag-vibe-coded/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `Generation` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 549}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `BaseMessage` - serialized value may not be as expected [field_name='message', input_value=AIMessage(content=[{'type...s': {'reasoning': 549}}), input_type=AIMessage])
+  PydanticSerializationUnexpectedValue(Expected `GenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 549}})), input_type=ChatGeneration])
+  PydanticSerializationUnexpectedValue(Expected `ChatGenerationChunk` - serialized value may not be as expected [field_name='generations', input_value=ChatGeneration(text='\n\n...': {'reasoning': 549}})), input_type=ChatGeneration])
+  return self.__pydantic_serializer__.to_python(

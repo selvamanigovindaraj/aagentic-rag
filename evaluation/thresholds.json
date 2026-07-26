@@ -1,0 +1,10 @@
+{
+  "route_accuracy": 0.9,
+  "retrieval_recall_at_20": 0.85,
+  "grounded_claim_rate": 0.95,
+  "citation_validity": 0.99,
+  "refusal_accuracy": 0.9,
+  "direct_p95_ms": 3500,
+  "synthesis_p95_ms": 10000,
+  "complex_p95_ms": 30000
+}

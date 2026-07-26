@@ -1,0 +1,7 @@
+[
+  {"query": "What is Q3 revenue?", "route": "direct"},
+  {"query": "Summarize remote-work policy trends", "route": "synthesis"},
+  {"query": "Compare drug A versus drug B", "route": "comparison"},
+  {"query": "Did the failure cause the resignation?", "route": "temporal_causal"},
+  {"query": "Find the connection between Stanford and Alzheimer's", "route": "multi_hop"}
+]

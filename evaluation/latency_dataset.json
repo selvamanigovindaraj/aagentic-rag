@@ -1,0 +1,14 @@
+[
+  {
+    "route": "direct",
+    "query": "Which clustering method does Project Juniper use?"
+  },
+  {
+    "route": "synthesis",
+    "query": "Summarize the storage responsibilities across all architecture documents"
+  },
+  {
+    "route": "complex",
+    "query": "Find the multi-hop connection between RAPTOR summaries and Neo4j evidence statements"
+  }
+]

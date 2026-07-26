@@ -1,0 +1,86 @@
+services:
+  api:
+    build: .
+    environment: &backend-env
+      DATABASE_URL: postgresql://rag:rag@postgres:5432/rag
+      REDIS_URL: redis://redis:6379/0
+      OBJECT_STORAGE_PATH: /data/raw
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY: rag
+      S3_SECRET_KEY: agentic-rag-secret
+      S3_BUCKET: rag-documents
+      WEAVIATE_URL: ${WEAVIATE_URL}
+      WEAVIATE_API_KEY: ${WEAVIATE_API_KEY}
+      WEAVIATE_COLLECTION: ${WEAVIATE_COLLECTION:-FilingSection}
+      NEO4J_URI: neo4j://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: agentic-rag-secret
+      # LiteLLM auto-discovers whichever provider's own key env var is set
+      # (below); LLM_FLASH_MODEL/LLM_PRO_MODEL select the provider+model, so
+      # swapping providers is a .env change only -- no compose/code edit.
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      MINIMAX_API_KEY: ${MINIMAX_API_KEY:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_FLASH_MODEL: ${LLM_FLASH_MODEL:-minimax/MiniMax-M2.7-highspeed}
+      LLM_PRO_MODEL: ${LLM_PRO_MODEL:-minimax/MiniMax-M3}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY}
+      VOYAGE_BASE_URL: https://api.voyageai.com/v1
+      VOYAGE_EMBEDDING_MODEL: voyage-4-lite
+      VOYAGE_RERANK_MODEL: rerank-2.5-lite
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-false}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-agentic-rag}
+      PHOENIX_ENABLED: ${PHOENIX_ENABLED:-false}
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+      PHOENIX_PROJECT_NAME: ${PHOENIX_PROJECT_NAME:-agentic-rag}
+      DEV_AUTH: "true"
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: {condition: service_started}
+      redis: {condition: service_started}
+      minio: {condition: service_started}
+      neo4j: {condition: service_healthy}
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    environment: *backend-env
+    depends_on:
+      postgres: {condition: service_started}
+      redis: {condition: service_started}
+      minio: {condition: service_started}
+      neo4j: {condition: service_healthy}
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    environment: {PHOENIX_SQL_DATABASE_URL: sqlite:////data/phoenix.db}
+    ports: ["6006:6006", "4317:4317"]
+    volumes: ["phoenixdata:/data"]
+  frontend:
+    build: frontend
+    ports: ["3000:80"]
+    depends_on: [api]
+  postgres:
+    image: postgres:17-alpine
+    environment: {POSTGRES_USER: rag, POSTGRES_PASSWORD: rag, POSTGRES_DB: rag}
+    ports: ["5433:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data", "./backend/migrations:/docker-entrypoint-initdb.d:ro"]
+  redis:
+    image: redis:7.4-alpine
+    ports: ["6379:6379"]
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment: {MINIO_ROOT_USER: rag, MINIO_ROOT_PASSWORD: agentic-rag-secret}
+    volumes: ["objectdata:/data"]
+  neo4j:
+    image: neo4j:2026.06.0
+    environment: {NEO4J_AUTH: neo4j/agentic-rag-secret}
+    ports: ["7474:7474", "7687:7687"]
+    volumes: ["neo4jdata:/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p agentic-rag-secret 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+volumes: {pgdata: {}, objectdata: {}, neo4jdata: {}, phoenixdata: {}}

@@ -1,0 +1,5 @@
+Frontend E2E Evidence Brief
+
+Project Juniper uses soft-membership Gaussian mixture model clustering with Bayesian information criterion selection to construct RAPTOR summary levels. The retrieval platform stores hybrid searchable chunks and RAPTOR summaries in Weaviate Cloud. Evidence-backed entities and statements are represented in Neo4j Aura, while PostgreSQL remains the durable system of record and Redis carries only ephemeral coordination events.
+
+For local development, requests use tenant and user headers instead of OAuth. The interface must expose operational stages such as planning, searching, and verifying, but it must never reveal hidden chain-of-thought.
