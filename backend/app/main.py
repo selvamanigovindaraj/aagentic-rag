@@ -12,7 +12,7 @@ from redis.asyncio import Redis
 
 from .api.routes import router
 from .components.hybrid_retriever import Neo4jRetriever, build_retrieval_stack
-from .components.llm import DeepSeekGateway
+from .components.llm import LiteLLMGateway
 from .components.object_store import S3ObjectStore
 from .components.voyage import VoyageGateway
 from .core.config import get_settings
@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
             app.state.store = store
             app.state.events = RedisEventBroker(redis)
             app.state.agent = RagPipeline(
-                retriever, settings, DeepSeekGateway(settings), checkpointer
+                retriever, settings, LiteLLMGateway(settings), checkpointer
             )
             yield
         finally:

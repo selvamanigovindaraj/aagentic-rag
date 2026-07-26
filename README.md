@@ -2,7 +2,7 @@
 
 **This system answers questions about a company's internal documents. It checks its own work, cites its sources, respects who is allowed to see what, and refuses to answer when it doesn't have the evidence.**
 
-Built with: FastAPI · LangGraph · DeepSeek · Voyage AI · Weaviate Cloud · Neo4j Aura · PostgreSQL · Redis · MinIO · Docker
+Built with: FastAPI · LangGraph · LiteLLM (MiniMax or any other provider) · Voyage AI · Weaviate Cloud · Neo4j · PostgreSQL · Redis · MinIO · Docker
 
 ---
 
@@ -137,7 +137,7 @@ All of these came up during development. All of them have code and tests behind 
 
 ## 6. Cost and speed
 
-**Use the cheap model almost everywhere.** DeepSeek Flash ($0.14 in / $0.28 out per million tokens) handles routing, expansion, critique, and normal answers. The Pro model (about 3× the price) is used for exactly two things where it's worth it: tricky routing decisions and final multi-step synthesis. Every run's token usage and dollar cost are recorded ([`observability/cost_tracker.py`](observability/cost_tracker.py)).
+**Model provider is a config value, not a code path.** Every LLM call goes through LiteLLM ([`langchain-litellm`](backend/app/components/llm.py)), so the model is just a `Settings` field — `LLM_FLASH_MODEL`/`LLM_PRO_MODEL` — pointed at whichever provider's own LiteLLM-prefixed model string you want, with credentials auto-discovered from that provider's own env var. The default is MiniMax M2.7-highspeed ($0.60 in / $2.40 out per million tokens) for routing and ordinary answers, and MiniMax M3 ($0.30 in / $1.20 out) for temporal/causal routing and multi-hop final synthesis — notably the *opposite* of the usual cheap-flash/pricey-pro pattern, since "highspeed" buys lower latency on high-volume calls, not a lower rate. Swapping to a provider with a genuine cost-tiered split (e.g. DeepSeek Flash at $0.14/$0.28, Pro reserved for the hard cases) is a pure env-var change. Every run's token usage and dollar cost are recorded ([`observability/cost_tracker.py`](observability/cost_tracker.py)).
 
 **Caching without leaks.** Search results are cached in Redis, but the cache key includes the tenant and the user's permission groups. A cache hit can never hand one user another user's results — which is the detail that makes caching safe to turn on in a multi-tenant system.
 
@@ -151,12 +151,12 @@ All of these came up during development. All of them have code and tests behind 
 
 ## 7. Running it
 
-**You need:** Docker + Compose, [uv](https://docs.astral.sh/uv/), and API keys for DeepSeek, Voyage AI, Weaviate Cloud, and Neo4j Aura (both databases are hosted services on purpose — there are no local containers for them).
+**You need:** Docker + Compose, [uv](https://docs.astral.sh/uv/), and API keys for MiniMax (or any other LiteLLM-supported LLM provider), Voyage AI, and Weaviate Cloud (the one datastore that's hosted on purpose — no local container for it). Neo4j runs locally via Compose with working defaults out of the box.
 
 ```bash
-cp .env.example .env        # fill in: DEEPSEEK_API_KEY, VOYAGE_API_KEY,
-                            # WEAVIATE_URL, WEAVIATE_API_KEY,
-                            # NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+cp .env.example .env        # fill in: MINIMAX_API_KEY, VOYAGE_API_KEY,
+                            # WEAVIATE_URL, WEAVIATE_API_KEY
+                            # (Neo4j's NEO4J_URI/USER/PASSWORD already work locally)
 
 # Everything: API on :8000, web UI on :3000, Postgres on :5433 (host), Redis, MinIO
 docker compose up --build

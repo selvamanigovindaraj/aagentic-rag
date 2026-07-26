@@ -8,7 +8,7 @@ from pathlib import Path
 
 import asyncpg
 from app.components.hybrid_retriever import Neo4jRetriever, build_retrieval_stack
-from app.components.llm import DeepSeekGateway
+from app.components.llm import LiteLLMGateway
 from app.components.voyage import VoyageGateway
 from app.core.config import Settings
 from app.repositories.postgres import PostgresStore
@@ -83,7 +83,7 @@ async def _evaluation_session(dataset: Path, settings: Settings):
     )
     store = PostgresStore(pool, settings.index_version)
     retriever = build_retrieval_stack(settings, voyage, graph, redis, store)
-    pipeline = RagPipeline(retriever, settings, DeepSeekGateway(settings))
+    pipeline = RagPipeline(retriever, settings, LiteLLMGateway(settings))
     try:
         yield cases, pipeline
     finally:
@@ -125,9 +125,9 @@ def _citations_evaluator(run, example) -> dict:
     return {"key": "citations_valid", "score": run.outputs["citations_valid"]}
 
 
-def _summarize_langsmith_results(results) -> dict:
+async def _summarize_langsmith_results(results) -> dict:
     scores: dict[str, list] = {}
-    for row in results:
+    async for row in results:
         for item in row["evaluation_results"].results:
             scores.setdefault(item.key, []).append(item.score)
 
@@ -163,7 +163,7 @@ async def evaluate_via_langsmith(
             predict, data=dataset_name, evaluators=evaluators,
             experiment_prefix="generation-eval", client=client,
         )
-    return _summarize_langsmith_results(results)
+    return await _summarize_langsmith_results(results)
 
 
 if __name__ == "__main__":

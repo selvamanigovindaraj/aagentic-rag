@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 backend/agentic_rag.egg-info/PKG-INFO
@@ -24,6 +25,7 @@ backend/app/components/voyage.py
 backend/app/core/__init__.py
 backend/app/core/config.py
 backend/app/core/errors.py
+backend/app/core/logging.py
 backend/app/prompts/__init__.py
 backend/app/prompts/registry.py
 backend/app/prompts/templates.py
@@ -42,6 +44,7 @@ backend/app/services/__init__.py
 backend/app/services/conversation.py
 backend/app/services/events.py
 backend/app/services/graph_index.py
+backend/app/services/groundedness.py
 backend/app/services/ingestion.py
 backend/app/services/query_rewriter.py
 backend/app/services/query_router.py
@@ -54,7 +57,10 @@ tests/test_agent_schemas.py
 tests/test_agentic_loop.py
 tests/test_api.py
 tests/test_core.py
+tests/test_evaluation_langsmith.py
 tests/test_graph_retrieval.py
+tests/test_groundedness.py
 tests/test_ingestion.py
 tests/test_layers.py
+tests/test_logging_config.py
 tests/test_models.py

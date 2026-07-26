@@ -2,11 +2,11 @@
 
 The API (`app/main.py`) and ingestion worker (`app/worker.py`) are separate processes built
 from one Python codebase (`backend/app/`). PostgreSQL is canonical — it holds documents, jobs,
-chat runs, and job leases. Weaviate Cloud and Neo4j Aura are rebuildable indexes: both are
-external/hosted (no local containers), tagged with `index_version` so a shadow reindex can build
-a new version alongside the old one and cut over without downtime. Redis is wake-up/event
-transport only; losing it interrupts progress streaming, never correctness, since the durable
-queue and leases live in Postgres.
+chat runs, and job leases. Weaviate (Cloud, external/hosted) and Neo4j (a local Docker container,
+Community Edition, no local Postgres/S3-style hosting cost) are rebuildable indexes, tagged with
+`index_version` so a shadow reindex can build a new version alongside the old one and cut over
+without downtime. Redis is wake-up/event transport only; losing it interrupts progress streaming,
+never correctness, since the durable queue and leases live in Postgres.
 
 ## Request path
 

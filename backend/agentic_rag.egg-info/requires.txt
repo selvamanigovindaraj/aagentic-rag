@@ -3,7 +3,6 @@ boto3<2,>=1.35
 fastapi<1,>=0.115
 httpx<1,>=0.28
 langgraph<2,>=0.4
-langchain-deepseek<2,>=1.0
 langchain-voyageai<1,>=0.1
 neo4j<7,>=5.28
 pydantic-settings<3,>=2.7
@@ -16,6 +15,7 @@ uvicorn[standard]<1,>=0.34
 langgraph-checkpoint-postgres<4,>=3
 langsmith<1,>=0.4
 psycopg[binary,pool]<4,>=3.3
+langchain-litellm<1,>=0.2.2
 
 [dev]
 pytest<9,>=8.3

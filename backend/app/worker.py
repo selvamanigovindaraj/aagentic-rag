@@ -14,7 +14,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from .components.hybrid_retriever import Neo4jRetriever, build_retrieval_stack
-from .components.llm import DeepSeekGateway
+from .components.llm import LiteLLMGateway
 from .components.object_store import S3ObjectStore
 from .components.voyage import VoyageGateway
 from .core.config import Settings, get_settings
@@ -241,8 +241,8 @@ def _run_metrics(
         "input_tokens": input_now - input_before,
         "output_tokens": output_now - output_before,
         "estimated_cost_usd": round(cost_now - cost_before, 8),
-        "flash_model": agent.settings.deepseek_flash_model,
-        "pro_model": agent.settings.deepseek_pro_model,
+        "flash_model": agent.settings.llm_flash_model,
+        "pro_model": agent.settings.llm_pro_model,
         "index_version": agent.settings.index_version,
     }
 
@@ -323,7 +323,7 @@ async def _build_components(
     client: httpx.AsyncClient,
     checkpointer: AsyncPostgresSaver,
 ) -> _WorkerComponents:
-    models = DeepSeekGateway(settings)
+    models = LiteLLMGateway(settings)
     embedder = VoyageGateway(settings)
     object_store = S3ObjectStore(settings)
     await object_store.setup()

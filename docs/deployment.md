@@ -2,20 +2,26 @@
 
 ## Local (Docker Compose)
 
-1. `cp .env.example .env` and fill in `DEEPSEEK_API_KEY`, `VOYAGE_API_KEY`, `WEAVIATE_URL` +
-   `WEAVIATE_API_KEY` (Weaviate Cloud), `NEO4J_URI` + `NEO4J_USER` + `NEO4J_PASSWORD` (Neo4j
-   Aura — the URI must use `neo4j+s://`/`neo4j+ssc://`, enforced by `Settings`). LangSmith
-   tracing is optional: set `LANGCHAIN_TRACING_V2=true` and `LANGCHAIN_API_KEY` to enable it.
+1. `cp .env.example .env` and fill in `MINIMAX_API_KEY` (default LLM provider; swap to any
+   other LiteLLM-supported provider via `LLM_FLASH_MODEL`/`LLM_PRO_MODEL`, no code change),
+   `VOYAGE_API_KEY`, and `WEAVIATE_URL` + `WEAVIATE_API_KEY` (Weaviate Cloud — the only
+   remaining external datastore). Neo4j's `NEO4J_URI`/`NEO4J_USER`/`NEO4J_PASSWORD` already
+   have working local-dev defaults (it runs as a Compose service, any URI scheme accepted, no
+   Aura requirement) — only override them for a different Neo4j instance. LangSmith tracing is
+   optional: set `LANGCHAIN_TRACING_V2=true` and `LANGCHAIN_API_KEY` to enable it.
 2. `docker compose up --build` — this starts `api` (:8000), `worker`, `frontend` (:3000),
-   `postgres` (host `5433` → container `5432`), `redis`, and `minio` (S3-compatible object
-   storage for uploaded documents; no local container for Weaviate or Neo4j — both stay
-   Cloud/Aura). Compose injects container-network URLs (`postgres:5432`, `redis:6379`,
-   `minio:9000`) for the `api`/`worker` services automatically via the shared `backend-env`
-   anchor in `compose.yaml`; `.env`'s host-side values (`localhost:5433`, etc.) are only for
-   running the API/worker directly on the host instead of in Compose.
-3. `docker compose logs api worker postgres redis minio` to check startup; Neo4j and Weaviate
-   only run in their managed clouds, so they never appear here.
-4. Open the frontend at `http://localhost:3000` and the API docs at `http://localhost:8000/docs`.
+   `postgres` (host `5433` → container `5432`), `redis`, `minio` (S3-compatible object storage
+   for uploaded documents), and `neo4j` (bolt `7687`, browser UI `7474`, both published to the
+   host). Weaviate Cloud is the only service that stays external. Compose injects
+   container-network URLs (`postgres:5432`, `redis:6379`, `minio:9000`, `neo4j:7687`) for the
+   `api`/`worker` services automatically via the shared `backend-env` anchor in `compose.yaml`;
+   `.env`'s host-side values (`localhost:5433`, `localhost:7687`, etc.) are only for running the
+   API/worker directly on the host instead of in Compose. `api`/`worker` wait for Neo4j's
+   healthcheck (`cypher-shell`) before starting, since it needs a moment to accept connections.
+3. `docker compose logs api worker postgres redis minio neo4j` to check startup; Weaviate only
+   runs in its managed cloud, so it never appears here.
+4. Open the frontend at `http://localhost:3000`, the API docs at `http://localhost:8000/docs`,
+   and the Neo4j Browser at `http://localhost:7474` (user `neo4j`, password from `.env`).
 
 Compose mounts `./backend/migrations` into Postgres's `docker-entrypoint-initdb.d`, so migrations
 run automatically on first volume initialization. Against an existing volume (schema changes on a

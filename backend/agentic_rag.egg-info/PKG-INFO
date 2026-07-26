@@ -3,12 +3,12 @@ Name: agentic-rag
 Version: 0.1.0
 Summary: Production-shaped agentic RAG for large enterprise corpora
 Requires-Python: >=3.12
+License-File: LICENSE
 Requires-Dist: asyncpg<1,>=0.30
 Requires-Dist: boto3<2,>=1.35
 Requires-Dist: fastapi<1,>=0.115
 Requires-Dist: httpx<1,>=0.28
 Requires-Dist: langgraph<2,>=0.4
-Requires-Dist: langchain-deepseek<2,>=1.0
 Requires-Dist: langchain-voyageai<1,>=0.1
 Requires-Dist: neo4j<7,>=5.28
 Requires-Dist: pydantic-settings<3,>=2.7
@@ -21,7 +21,9 @@ Requires-Dist: uvicorn[standard]<1,>=0.34
 Requires-Dist: langgraph-checkpoint-postgres<4,>=3
 Requires-Dist: langsmith<1,>=0.4
 Requires-Dist: psycopg[binary,pool]<4,>=3.3
+Requires-Dist: langchain-litellm<1,>=0.2.2
 Provides-Extra: dev
 Requires-Dist: pytest<9,>=8.3; extra == "dev"
 Requires-Dist: pytest-asyncio<2,>=0.25; extra == "dev"
 Requires-Dist: ruff<1,>=0.11; extra == "dev"
+Dynamic: license-file

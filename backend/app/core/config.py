@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     weaviate_url: str = ""
     weaviate_api_key: str = ""
     weaviate_collection: str = "FilingSection"
-    neo4j_uri: str = ""
+    neo4j_uri: str = "neo4j://localhost:7687"
     neo4j_user: str = "neo4j"
-    neo4j_password: str = "change-me"
+    neo4j_password: str = "agentic-rag-secret"
     oidc_issuer: str = ""
     oidc_audience: str = "agentic-rag"
     oidc_jwks_url: str = ""
@@ -37,14 +37,25 @@ class Settings(BaseSettings):
     max_total_retrieval_calls: int = 30
     max_total_model_calls: int = 30
     direct_confidence_threshold: float = 0.55
-    deepseek_api_key: str = ""
-    deepseek_base_url: str = "https://api.deepseek.com"
-    deepseek_flash_model: str = "deepseek-v4-flash"
-    deepseek_pro_model: str = "deepseek-v4-pro"
-    deepseek_flash_input_usd_per_million: float = 0.14
-    deepseek_flash_output_usd_per_million: float = 0.28
-    deepseek_pro_input_usd_per_million: float = 0.435
-    deepseek_pro_output_usd_per_million: float = 0.87
+    # LiteLLM-prefixed model strings (provider/model) -- swapping the provider
+    # (e.g. to "deepseek/deepseek-v4-flash") is a config-only change, no code
+    # touched. The provider's own credential env var (MINIMAX_API_KEY,
+    # DEEPSEEK_API_KEY, ...) is auto-discovered by LiteLLM; llm_api_key/
+    # llm_base_url are optional explicit overrides, e.g. for a custom
+    # gateway/proxy.
+    llm_api_key: str = ""
+    llm_base_url: str = ""
+    llm_flash_model: str = "minimax/MiniMax-M2.7-highspeed"
+    llm_pro_model: str = "minimax/MiniMax-M3"
+    # "Highspeed" is a premium low-latency M2.7 variant, not a cheap one -- it
+    # costs MORE per token than M3 ($0.60/$2.40 vs $0.30/$1.20). Flash still
+    # gets the volume-cost benefit from fewer output tokens on ordinary calls,
+    # but per-token this inverts the usual cheap-flash/pricey-pro assumption;
+    # rates below are MiniMax's official pay-as-you-go prices, not a guess.
+    llm_flash_input_usd_per_million: float = 0.60
+    llm_flash_output_usd_per_million: float = 2.40
+    llm_pro_input_usd_per_million: float = 0.30
+    llm_pro_output_usd_per_million: float = 1.20
     voyage_api_key: str = ""
     voyage_base_url: str = "https://api.voyageai.com/v1"
     voyage_embedding_model: str = "voyage-4-lite"
@@ -57,13 +68,6 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_weaviate_url(cls, value: str) -> str:
         return f"https://{value}" if value and "://" not in value else value
-
-    @field_validator("neo4j_uri")
-    @classmethod
-    def require_neo4j_aura(cls, value: str) -> str:
-        if value and not value.startswith(("neo4j+s://", "neo4j+ssc://")):
-            raise ValueError("NEO4J_URI must use an encrypted Neo4j Aura URI")
-        return value
 
 
 @lru_cache

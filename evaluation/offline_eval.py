@@ -18,14 +18,14 @@ async def route_accuracy_live(dataset: Path) -> dict:
     production actually routes with, and the two can disagree (see
     rag_pipeline.py's RagPipeline._classify: the LLM now always gets a look,
     including the cases the keyword router defaults to `direct`)."""
-    from app.components.llm import DeepSeekGateway
+    from app.components.llm import LiteLLMGateway
     from app.components.retrieval import EmptyRetriever
     from app.core.config import Settings
     from app.services.rag_pipeline import RagPipeline
 
     examples = json.loads(await asyncio.to_thread(dataset.read_text))
     settings = Settings()
-    pipeline = RagPipeline(EmptyRetriever(), settings, DeepSeekGateway(settings))
+    pipeline = RagPipeline(EmptyRetriever(), settings, LiteLLMGateway(settings))
     results = []
     for item in examples:
         state = await pipeline._classify({"query": item["query"], "model_calls": 0})

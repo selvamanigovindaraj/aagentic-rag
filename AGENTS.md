@@ -5,13 +5,13 @@
 - Never traverse Neo4j entities before restricting the contributing `Statement` nodes by tenant and ACL.
 - The current default store/retriever are in-memory/empty for hermetic startup; production adapters must be selected during application lifespan before deployment.
 - Weaviate is cloud-hosted; never add a local Weaviate container. Use `WEAVIATE_URL` and `WEAVIATE_API_KEY`.
-- Neo4j is Aura-hosted; never add a local Neo4j container. Use the `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_PASSWORD` values from `.env`.
+- Neo4j runs as a local Docker container (the `neo4j` Compose service). Use the `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_PASSWORD` values from `.env`; any valid scheme is accepted, no Aura-only restriction.
 - PDF parsing uses PyMuPDF without OCR. A wholly image-only PDF must fail with `OCR_REQUIRED`; never index it as an empty document.
 - Native DOCX/PPTX and PDF layout manifests live beside originals as `<object_key>.layout.json`; delete both together.
 - Runtime state is PostgreSQL-backed. Compose uses `postgres:5432`; host development uses `localhost:5433` to avoid the system PostgreSQL port.
 - Frontend Nginx must resolve `api` through Docker DNS at request time; a startup-resolved upstream becomes stale after the API container is recreated.
-- DeepSeek Flash is the default model; only temporal/causal and multi-hop final synthesis uses Pro.
-- Always use LangChain provider integrations for completion, embedding, and reranking models. Do not hand-write provider HTTP clients.
+- MiniMax M2.7-highspeed is the default flash model; MiniMax M3 handles temporal/causal routing and multi-hop final synthesis. Both are `Settings` fields, not hardcoded -- swapping providers (e.g. to DeepSeek) is a config/env-var change only, via LiteLLM.
+- Always use LangChain provider integrations for completion, embedding, and reranking models (LiteLLM's `langchain-litellm` for completions). Do not hand-write provider HTTP clients.
 - The current Weaviate Cloud plan permits one collection, so Compose defaults `WEAVIATE_COLLECTION` to the existing `FilingSection`; every RAG object/query is isolated by `tenantId` and `nodeType`.
 - Weaviate public ACLs use the `__public__` index marker because the shared collection does not enable null-state indexing; translate that marker back to an empty ACL before authorization checks.
 - LangGraph checkpoints are created in PostgreSQL at API startup; every chat run ID is also its checkpoint `thread_id`.
