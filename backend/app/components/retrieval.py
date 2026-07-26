@@ -304,7 +304,7 @@ def _chunk_evidence(row: dict) -> Evidence:
         page=row.get("page"),
         section=row.get("section"),
         score=float(row.get("_additional", {}).get("score") or 0),
-        acl_groups=set(row.get("aclGroups") or []) - {"__public__"},
+        acl_groups=set(row.get("aclGroups") or []),
         context_text=row.get("parentText") or row["text"],
     )
 

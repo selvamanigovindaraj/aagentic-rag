@@ -15,7 +15,7 @@ from .components.hybrid_retriever import Neo4jRetriever, build_retrieval_stack
 from .components.llm import LiteLLMGateway
 from .components.object_store import S3ObjectStore
 from .components.voyage import VoyageGateway
-from .core.config import get_settings
+from .core.config import assert_safe_for_environment, get_settings
 from .core.errors import AppError, app_error_handler
 from .core.logging import configure_logging
 from .core.tracing import configure_tracing
@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
         yield
         return
     settings = get_settings()
+    assert_safe_for_environment(settings)
     app.state.settings = settings
     async with (
         httpx.AsyncClient(timeout=5) as app.state.http,

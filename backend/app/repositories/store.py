@@ -43,7 +43,7 @@ class Store(Protocol):
     async def finalize_document_delete(self, document_id: UUID) -> None: ...
     async def list_documents(self, tenant_id: str, groups: frozenset[str]) -> list[Document]: ...
     async def delete_document(
-        self, tenant_id: str, document_id: UUID, groups: frozenset[str]
+        self, tenant_id: str, document_id: UUID, groups: frozenset[str], requester_id: str
     ) -> bool: ...
     async def create_session(self, session: ChatSession) -> None: ...
     async def get_session(self, tenant_id: str, session_id: UUID) -> ChatSession | None: ...
@@ -205,13 +205,14 @@ class MemoryStore:
         ]
 
     async def delete_document(
-        self, tenant_id: str, document_id: UUID, groups: frozenset[str]
+        self, tenant_id: str, document_id: UUID, groups: frozenset[str], requester_id: str
     ) -> bool:
         document = self.documents.get(document_id)
         if (
             not document
             or document.tenant_id != tenant_id
             or not visible(document.acl_groups, groups)
+            or document.uploaded_by != requester_id
         ):
             return False
         document.index_status = IndexStatus.DELETING

@@ -18,7 +18,7 @@ from .components.hybrid_retriever import Neo4jRetriever, build_retrieval_stack
 from .components.llm import LiteLLMGateway
 from .components.object_store import S3ObjectStore
 from .components.voyage import VoyageGateway
-from .core.config import Settings, get_settings
+from .core.config import Settings, assert_safe_for_environment, get_settings
 from .core.errors import AppError
 from .core.logging import configure_logging
 from .core.tracing import configure_tracing
@@ -412,6 +412,7 @@ async def _work_loop(settings: Settings, redis: Redis, c: _WorkerComponents) -> 
 
 async def run() -> None:
     settings = get_settings()
+    assert_safe_for_environment(settings)
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
     pool = await asyncpg.create_pool(settings.database_url)
     try:

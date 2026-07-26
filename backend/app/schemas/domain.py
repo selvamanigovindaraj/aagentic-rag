@@ -65,6 +65,7 @@ class Document(BaseModel):
     author: str | None = None
     department: str | None = None
     acl_groups: set[str] = Field(default_factory=set)
+    uploaded_by: str = ""
     content_hash: str | None = None
     version: int = 1
     index_status: IndexStatus = IndexStatus.ACTIVE

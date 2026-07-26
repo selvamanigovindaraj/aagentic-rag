@@ -73,6 +73,16 @@ class Settings(BaseSettings):
         return f"https://{value}" if value and "://" not in value else value
 
 
+def assert_safe_for_environment(settings: Settings) -> None:
+    """Refuse to boot with dev-only defaults outside development."""
+    if settings.app_env == "development":
+        return
+    if settings.dev_auth:
+        raise RuntimeError("dev_auth must be false outside development")
+    if settings.neo4j_password == "agentic-rag-secret":
+        raise RuntimeError("neo4j_password must be overridden outside development")
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

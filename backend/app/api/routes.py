@@ -142,6 +142,7 @@ async def create_document(
         logical_id=logical_id,
         version=version,
         index_status=IndexStatus.PENDING,
+        uploaded_by=auth.subject,
         **payload.model_dump(mode="json"),
     )
     job = IngestionJob(
@@ -175,7 +176,7 @@ async def list_documents(
 async def delete_document(
     document_id: UUID, auth: AuthContext = Depends(auth_context), store: Store = Depends(get_store)
 ):
-    if not await store.delete_document(auth.tenant_id, document_id, auth.groups):
+    if not await store.delete_document(auth.tenant_id, document_id, auth.groups, auth.subject):
         raise AppError(404, "DOCUMENT_NOT_FOUND", "Document not found")
     return Response(status_code=204)
 

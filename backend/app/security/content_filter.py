@@ -8,5 +8,6 @@ def authorized_evidence(
     return [
         item
         for item in evidence
-        if item.source_kind == "source" and (not item.acl_groups or item.acl_groups & groups)
+        if item.source_kind == "source"
+        and (not item.acl_groups or "__public__" in item.acl_groups or item.acl_groups & groups)
     ]

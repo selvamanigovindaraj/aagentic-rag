@@ -11,7 +11,7 @@ from app.components.retrieval import (
     WeaviateRetriever,
     weaviate_acl_filter,
 )
-from app.core.config import Settings
+from app.core.config import Settings, assert_safe_for_environment
 from app.core.errors import AppError
 from app.repositories.store import MemoryStore, visible
 from app.schemas.domain import AuthContext, Document, Evidence, IngestionJob, JobStatus, Route
@@ -182,6 +182,46 @@ def test_weaviate_cloud_credentials_are_attached():
     retriever = WeaviateRetriever("https://cluster.weaviate.network/", "secret")
     assert retriever.url == "https://cluster.weaviate.network"
     assert retriever.headers == {"Authorization": "Bearer secret"}
+
+
+def test_dev_auth_must_be_disabled_outside_development():
+    assert_safe_for_environment(Settings(app_env="development", dev_auth=True))
+    assert_safe_for_environment(Settings(app_env="production", dev_auth=False, neo4j_password="x"))
+    with pytest.raises(RuntimeError, match="dev_auth"):
+        assert_safe_for_environment(Settings(app_env="production", dev_auth=True))
+
+
+def test_neo4j_password_default_rejected_outside_development():
+    with pytest.raises(RuntimeError, match="neo4j_password"):
+        assert_safe_for_environment(Settings(app_env="production", dev_auth=False))
+
+
+def test_public_marker_overrides_restricted_acl_groups():
+    # A doc mixing a restricted group with the public marker (acl_groups=
+    # {"finance", "__public__"}) is matched by the Weaviate ContainsAny filter
+    # for any user, so the final authorization gate must agree -- otherwise a
+    # user with no matching restricted group is silently denied evidence the
+    # index says they can read.
+    document_id = uuid4()
+    mixed = Evidence(
+        id="mixed",
+        document_id=document_id,
+        document_title="Policy",
+        text="text",
+        score=0.9,
+        acl_groups={"finance", "__public__"},
+    )
+    restricted = Evidence(
+        id="restricted",
+        document_id=document_id,
+        document_title="Policy",
+        text="text",
+        score=0.9,
+        acl_groups={"finance"},
+    )
+
+    assert authorized_evidence([mixed], "tenant", frozenset({"hr"})) == [mixed]
+    assert authorized_evidence([restricted], "tenant", frozenset({"hr"})) == []
 
 
 def test_weaviate_chunk_query_escapes_newlines_and_quotes():

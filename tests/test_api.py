@@ -196,6 +196,25 @@ def test_delete_fails_closed_and_queues_index_cleanup(tmp_path):
     assert len(cleanup) == 1 and str(cleanup[0].document_id) == document["id"]
 
 
+def test_delete_requires_uploader_not_just_acl_membership():
+    configure_test_app()
+    app.state.settings = Settings()
+    other_user = {"X-Tenant-ID": "tenant-a", "X-User-ID": "user-b", "X-Groups": "hr"}
+    with TestClient(app) as client:
+        document = client.post(
+            "/api/v1/documents",
+            headers=HEADERS,
+            json={"title": "Policy", "object_key": "tenant-a/policy.pdf", "acl_groups": ["hr"]},
+        ).json()["document"]
+        rejected = client.delete(f"/api/v1/documents/{document['id']}", headers=other_user)
+        still_visible = client.get("/api/v1/documents", headers=HEADERS).json()
+        accepted = client.delete(f"/api/v1/documents/{document['id']}", headers=HEADERS)
+
+    assert rejected.status_code == 404
+    assert still_visible[0]["id"] == document["id"]
+    assert accepted.status_code == 204
+
+
 def test_citation_requires_document_acl():
     configure_test_app()
     document = Document(tenant_id="tenant-a", title="Private", acl_groups={"legal"})

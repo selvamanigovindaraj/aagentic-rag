@@ -18,8 +18,9 @@ class PostgresStore:
             await connection.execute(
                 """INSERT INTO documents
                 (id, tenant_id, logical_id, revision_of, title, source_url, object_key, author,
-                 department, acl_groups, content_hash, version, index_status, created_at)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)""",
+                 department, acl_groups, uploaded_by, content_hash, version, index_status,
+                 created_at)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)""",
                 document.id,
                 document.tenant_id,
                 document.logical_id,
@@ -30,6 +31,7 @@ class PostgresStore:
                 document.author,
                 document.department,
                 list(document.acl_groups),
+                document.uploaded_by,
                 document.content_hash,
                 document.version,
                 document.index_status,
@@ -271,16 +273,17 @@ class PostgresStore:
         return [Document.model_validate(dict(row)) for row in rows]
 
     async def delete_document(
-        self, tenant_id: str, document_id: UUID, groups: frozenset[str]
+        self, tenant_id: str, document_id: UUID, groups: frozenset[str], requester_id: str
     ) -> bool:
         async with self.pool.acquire() as connection, connection.transaction():
             result = await connection.execute(
                 """UPDATE documents SET index_status='deleting' WHERE tenant_id=$1 AND id=$2
-            AND deleted_at IS NULL
+            AND deleted_at IS NULL AND uploaded_by=$4
             AND (cardinality(acl_groups)=0 OR acl_groups && $3::text[])""",
                 tenant_id,
                 document_id,
                 list(groups),
+                requester_id,
             )
             if result == "UPDATE 1":
                 job_id = await connection.fetchval(

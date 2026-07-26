@@ -181,7 +181,7 @@ PDFs are read as native text (no OCR); Word and PowerPoint files use their nativ
 
 ```bash
 uv run ruff check backend evaluation tests
-uv run --extra dev pytest -q                                  # 89 tests
+uv run --extra dev pytest -q                                  # 140 tests
 uv run python evaluation/runtime_report.py                    # scores vs thresholds.json
 uv run python evaluation/load_test.py --count 100000 --concurrency 20
 ```
