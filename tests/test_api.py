@@ -1,7 +1,7 @@
 from app.components.retrieval import EmptyRetriever
 from app.core.config import Settings
 from app.main import app
-from app.repositories.store import MemoryStore
+from app.repositories.store import LEGACY_UPLOADER, MemoryStore
 from app.schemas.domain import Citation, Document
 from app.services.events import MemoryEventBroker
 from app.services.rag_pipeline import RagPipeline
@@ -194,6 +194,23 @@ def test_delete_fails_closed_and_queues_index_cleanup(tmp_path):
     assert visible_documents == []
     cleanup = [job for job in app.state.store.jobs.values() if job.operation == "delete"]
     assert len(cleanup) == 1 and str(cleanup[0].document_id) == document["id"]
+
+
+def test_legacy_documents_without_a_recorded_uploader_stay_deletable():
+    # Migration 008 backfills pre-existing rows to the LEGACY_UPLOADER sentinel
+    # rather than leaving uploaded_by empty, so a document that predates
+    # uploader tracking doesn't become permanently undeletable by every
+    # reader once the uploader-only check ships.
+    configure_test_app()
+    app.state.settings = Settings()
+    document = Document(
+        tenant_id="tenant-a", title="Legacy", acl_groups={"hr"}, uploaded_by=LEGACY_UPLOADER
+    )
+    app.state.store.documents[document.id] = document
+    with TestClient(app) as client:
+        response = client.delete(f"/api/v1/documents/{document.id}", headers=HEADERS)
+
+    assert response.status_code == 204
 
 
 def test_delete_requires_uploader_not_just_acl_membership():

@@ -6,6 +6,7 @@ from uuid import UUID
 import asyncpg
 
 from ..schemas.domain import ChatRun, ChatSession, Citation, CorpusRebuild, Document, IngestionJob
+from .store import LEGACY_UPLOADER
 
 
 class PostgresStore:
@@ -278,12 +279,13 @@ class PostgresStore:
         async with self.pool.acquire() as connection, connection.transaction():
             result = await connection.execute(
                 """UPDATE documents SET index_status='deleting' WHERE tenant_id=$1 AND id=$2
-            AND deleted_at IS NULL AND uploaded_by=$4
+            AND deleted_at IS NULL AND uploaded_by IN ($4, $5)
             AND (cardinality(acl_groups)=0 OR acl_groups && $3::text[])""",
                 tenant_id,
                 document_id,
                 list(groups),
                 requester_id,
+                LEGACY_UPLOADER,
             )
             if result == "UPDATE 1":
                 job_id = await connection.fetchval(
