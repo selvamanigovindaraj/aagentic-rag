@@ -16,6 +16,11 @@ from ..schemas.domain import (
     JobStatus,
 )
 
+# Sentinel `uploaded_by` for documents created before uploader tracking
+# (migration 007/008): keeps them deletable by any authorized reader instead
+# of permanently orphaned, since no real subject is ever this literal string.
+LEGACY_UPLOADER = "__legacy__"
+
 
 class Store(Protocol):
     async def create_document(self, document: Document, job: IngestionJob) -> None: ...
@@ -212,7 +217,7 @@ class MemoryStore:
             not document
             or document.tenant_id != tenant_id
             or not visible(document.acl_groups, groups)
-            or document.uploaded_by != requester_id
+            or document.uploaded_by not in (requester_id, LEGACY_UPLOADER)
         ):
             return False
         document.index_status = IndexStatus.DELETING
