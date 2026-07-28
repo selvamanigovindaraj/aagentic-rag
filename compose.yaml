@@ -9,8 +9,8 @@ services:
       S3_ACCESS_KEY: rag
       S3_SECRET_KEY: agentic-rag-secret
       S3_BUCKET: rag-documents
-      WEAVIATE_URL: ${WEAVIATE_URL}
-      WEAVIATE_API_KEY: ${WEAVIATE_API_KEY}
+      WEAVIATE_URL: http://weaviate:8080
+      WEAVIATE_API_KEY: ${WEAVIATE_API_KEY:-agentic-rag-dev-key}
       WEAVIATE_COLLECTION: ${WEAVIATE_COLLECTION:-FilingSection}
       NEO4J_URI: neo4j://neo4j:7687
       NEO4J_USER: neo4j
@@ -41,6 +41,7 @@ services:
       redis: {condition: service_started}
       minio: {condition: service_started}
       neo4j: {condition: service_healthy}
+      weaviate: {condition: service_healthy}
   worker:
     build: .
     command: ["python", "-m", "app.worker"]
@@ -50,9 +51,11 @@ services:
       redis: {condition: service_started}
       minio: {condition: service_started}
       neo4j: {condition: service_healthy}
+      weaviate: {condition: service_healthy}
   phoenix:
     image: arizephoenix/phoenix:latest
     environment: {PHOENIX_SQL_DATABASE_URL: sqlite:////data/phoenix.db}
+    mem_limit: 900m
     ports: ["6006:6006", "4317:4317"]
     volumes: ["phoenixdata:/data"]
   frontend:
@@ -74,7 +77,16 @@ services:
     volumes: ["objectdata:/data"]
   neo4j:
     image: neo4j:2026.06.0
-    environment: {NEO4J_AUTH: neo4j/agentic-rag-secret}
+    environment:
+      NEO4J_AUTH: neo4j/agentic-rag-secret
+      # Without explicit sizing, Neo4j auto-scales heap/pagecache off the
+      # full host memory it sees, not the actual graph size -- for this
+      # dataset (tens of thousands of nodes/rels) that badly over-allocates
+      # on a shared dev host. Sized comfortably above what this graph needs.
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    mem_limit: 1200m
     ports: ["7474:7474", "7687:7687"]
     volumes: ["neo4jdata:/data"]
     healthcheck:
@@ -83,4 +95,32 @@ services:
       timeout: 10s
       retries: 10
       start_period: 30s
-volumes: {pgdata: {}, objectdata: {}, neo4jdata: {}, phoenixdata: {}}
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.31.1
+    environment:
+      QUERY_DEFAULTS_LIMIT: "25"
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      DEFAULT_VECTORIZER_MODULE: none
+      ENABLE_MODULES: ""
+      CLUSTER_HOSTNAME: node1
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "false"
+      AUTHENTICATION_APIKEY_ENABLED: "true"
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: ${WEAVIATE_API_KEY:-agentic-rag-dev-key}
+      AUTHENTICATION_APIKEY_USERS: rag-dev
+      AUTHORIZATION_ADMINLIST_ENABLED: "true"
+      AUTHORIZATION_ADMINLIST_USERS: rag-dev
+      # Go's runtime otherwise sizes its heap/GC target off the full host
+      # memory it sees rather than this container's actual ~10K-object
+      # collection -- pin it well below the container's hard mem_limit.
+      GOMEMLIMIT: 900MiB
+      LIMIT_RESOURCES: "true"
+    mem_limit: 1200m
+    ports: ["8080:8080", "50051:50051"]
+    volumes: ["weaviatedata:/var/lib/weaviate"]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+volumes: {pgdata: {}, objectdata: {}, neo4jdata: {}, phoenixdata: {}, weaviatedata: {}}
