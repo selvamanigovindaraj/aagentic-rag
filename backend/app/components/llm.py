@@ -47,6 +47,8 @@ def _strip_json_fence(text: str) -> str:
             continue
         try:
             _, end = _JSON_DECODER.raw_decode(text, start)
+        except RecursionError as exc:
+            raise ValueError("LLM JSON exceeds the supported nesting depth") from exc
         except json.JSONDecodeError:
             continue
         if best is None or end > best[1]:

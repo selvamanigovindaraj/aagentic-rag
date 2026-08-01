@@ -203,6 +203,36 @@ async def test_complete_prefers_the_final_json_over_a_schema_quoted_in_reasoning
 
 
 @pytest.mark.asyncio
+async def test_complete_converts_recursion_error_from_deeply_nested_json_to_value_error(
+    monkeypatch,
+):
+    """`JSONDecoder.raw_decode` recurses per nesting level and raises
+    RecursionError (not JSONDecodeError) on pathologically deep model output.
+    Left uncaught, that would escape `RagPipeline._structured()`'s
+    `except (ValueError, json.JSONDecodeError)` fallback and crash the whole
+    durable run instead of degrading gracefully like any other malformed
+    structured response. Depth is empirically calibrated: CPython's
+    C-accelerated `_json` scanner (used here) tolerates far deeper nesting
+    before raising than the pure-Python decoder or `sys.getrecursionlimit()`
+    (1000) would suggest -- 1100 doesn't reproduce it on this interpreter,
+    60,000 reliably does."""
+    depth = 60_000
+    deeply_nested = '{"a":' * depth + "0" + "}" * depth
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content=deeply_nested,
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    with pytest.raises(ValueError):
+        await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+
+@pytest.mark.asyncio
 async def test_complete_leaves_plain_text_untouched_when_not_json_output(monkeypatch):
     async def invoke(model, messages, config=None, **kwargs):
         return AIMessage(

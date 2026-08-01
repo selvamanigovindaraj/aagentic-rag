@@ -5,7 +5,7 @@
 
 ## Symptom
 
-Generation eval (250 MultiHop-RAG-derived queries, local Weaviate/Neo4j/Postgres, `evaluation/generation_eval_local250_results.jsonl`) failed its threshold overall (`refusal_accuracy: 0.852` vs. `0.90` required). The failure concentrates almost entirely in the `null_query` bucket:
+Generation eval (250 MultiHop-RAG-derived queries, a historical dev-only reproduction environment with Weaviate run locally instead of Weaviate Cloud plus Neo4j/Postgres, `evaluation/generation_eval_local250_results.jsonl`) failed its threshold overall (`refusal_accuracy: 0.852` vs. `0.90` required). The failure concentrates almost entirely in the `null_query` bucket:
 
 | question_type | count | refusal_accuracy |
 |---|---|---|
@@ -25,7 +25,7 @@ of this — see "Why the eval's own metrics didn't catch it" below.
 
 Ran one failing case directly against the live pipeline (`RagPipeline.run`), no eval harness involved:
 
-```
+```text
 Query: "Considering the information from a New York Times article and a Wall Street Journal
 report on Ryan McInerney, what is the first letter of the city where the company he leads is
 headquartered, which also announced a significant financial technology investment as per the

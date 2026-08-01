@@ -132,6 +132,11 @@ same change, and verify with an end-to-end test, not just a function-level one.
 
 ## Local infra needs memory caps sized for the actual data, not left to auto-scale
 
+*Scope note: this lesson comes from a historical dev-only reproduction environment that ran
+Weaviate locally to debug a specific issue. Weaviate remains cloud-hosted per AGENTS.md — this
+section is about the local-only Neo4j container plus that temporary local Weaviate, not a
+supported configuration.*
+
 **What happened.** A generation eval run at concurrency 5 failed almost every case with
 `httpx.ReadTimeout` against a locally-provisioned Weaviate — even though a single hand-written
 query against the same instance responded in ~1 second moments earlier.
