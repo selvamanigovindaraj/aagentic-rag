@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import litellm
 import pytest
+from app.components import llm as llm_module
 from app.components.llm import LiteLLMGateway
 from app.components.voyage import VoyageGateway
 from app.core.config import Settings
@@ -211,17 +212,22 @@ async def test_complete_converts_recursion_error_from_deeply_nested_json_to_valu
     Left uncaught, that would escape `RagPipeline._structured()`'s
     `except (ValueError, json.JSONDecodeError)` fallback and crash the whole
     durable run instead of degrading gracefully like any other malformed
-    structured response. Depth is empirically calibrated: CPython's
-    C-accelerated `_json` scanner (used here) tolerates far deeper nesting
-    before raising than the pure-Python decoder or `sys.getrecursionlimit()`
-    (1000) would suggest -- 1100 doesn't reproduce it on this interpreter,
-    60,000 reliably does."""
-    depth = 60_000
-    deeply_nested = '{"a":' * depth + "0" + "}" * depth
+    structured response. The decoder is faked to raise directly rather than
+    feeding it a real deeply-nested payload: the nesting depth needed to
+    trigger CPython's C-accelerated `_json` scanner varies by build (far
+    deeper than `sys.getrecursionlimit()` would suggest), so a depth
+    calibrated against one interpreter isn't a reliable trigger on another."""
+
+    class _RaisingDecoder:
+        @staticmethod
+        def raw_decode(_text, _start):
+            raise RecursionError
+
+    monkeypatch.setattr(llm_module, "_JSON_DECODER", _RaisingDecoder())
 
     async def invoke(model, messages, config=None, **kwargs):
         return AIMessage(
-            content=deeply_nested,
+            content="{}",
             usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
         )
 

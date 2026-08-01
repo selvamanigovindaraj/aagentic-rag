@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,8 +53,8 @@ class Settings(BaseSettings):
     # was cut off mid-sentence before any JSON at a 2000 budget, deterministically
     # failing to parse every time. Calibrated headroom, not a guarantee -- raise
     # further if truncation persists on heavier queries.
-    llm_flash_max_tokens: int = 8000
-    llm_pro_max_tokens: int = 15000
+    llm_flash_max_tokens: int = Field(8000, gt=0)
+    llm_pro_max_tokens: int = Field(15000, gt=0)
     # "Highspeed" is a premium low-latency M2.7 variant, not a cheap one -- it
     # costs MORE per token than M3 ($0.60/$2.40 vs $0.30/$1.20). Flash still
     # gets the volume-cost benefit from fewer output tokens on ordinary calls,

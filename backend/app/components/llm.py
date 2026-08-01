@@ -22,7 +22,7 @@ class ModelGateway(Protocol):
     ) -> str: ...
 
 
-def _strip_json_fence(text: str) -> str:
+def _extract_json_payload(text: str) -> str:
     """MiniMax models wrap JSON-mode output unpredictably -- observed live,
     not hypothetical: a ```json fence, a visible <think>...</think> block
     (model_kwargs={"thinking": ...} is silently dropped for this provider),
@@ -134,7 +134,7 @@ class LiteLLMGateway:
         self._track_usage(response, use_pro)
         if not response.text:
             raise ValueError("LLM returned empty content")
-        return _strip_json_fence(response.text) if json_output else response.text
+        return _extract_json_payload(response.text) if json_output else response.text
 
     def _track_usage(self, response: AIMessage, use_pro: bool) -> None:
         usage = response.usage_metadata or {}
