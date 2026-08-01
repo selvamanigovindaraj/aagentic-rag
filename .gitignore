@@ -14,6 +14,7 @@ frontend/node_modules/
 frontend/dist/
 
 # Data / build artifacts
+build/
 graphify-out/
 data/processed/
 data/index_config/*.local.*
