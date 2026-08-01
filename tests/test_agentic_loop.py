@@ -401,3 +401,140 @@ async def test_generation_refuses_when_model_declines_to_synthesize_a_connection
     assert "connection between A and B" in result["answer"]
     assert result["grounded_claims"] == 0
     assert result["citation_verification"] == "unsupported"
+
+
+@pytest.mark.asyncio
+async def test_generate_refuses_instead_of_dumping_evidence_when_grounded_answer_unparseable():
+    """Root cause of the null_query refusal-accuracy bug: MiniMax-M3's
+    <think>-wrapped output (fixed separately in llm.py) failing to parse used
+    to fall through to _numbered_fallback, which dumps whatever evidence was
+    retrieved -- even if it's about a completely different topic -- as if it
+    were a real answer. A parse failure must be conservative (refuse), not
+    permissive (show unrelated evidence)."""
+
+    class Models:
+        async def complete(self, messages, **kwargs):
+            return "<think>truncated reasoning with no closing tag"
+
+    result = await RagPipeline(object(), Settings(), Models())._generate(
+        {
+            "route": Route.MULTIHOP,
+            "query": "Unanswerable question",
+            "tenant_id": "tenant",
+            "accepted_evidence": [
+                _evidence("a", "unrelated evidence text").model_dump(mode="json")
+            ],
+            "context_groups": [{"title": "doc", "ids": ["a"]}],
+        }
+    )
+
+    assert "could not find enough authorized evidence" in result["answer"]
+    assert "unrelated evidence text" not in result["answer"]
+    assert result["answer_source"] == "unverifiable"
+
+
+@pytest.mark.asyncio
+async def test_generate_refuses_when_citations_reference_evidence_outside_accepted_set():
+    """A model can return well-formed JSON that still cites an evidence_id we
+    never accepted (hallucinated or stale reference) -- this must also refuse
+    rather than fall through to a raw evidence dump."""
+
+    class Models:
+        async def complete(self, messages, **kwargs):
+            return (
+                '{"claims":[{"text":"Some claim.","evidence_ids":["not-accepted"]}],'
+                '"unsupported":[]}'
+            )
+
+    result = await RagPipeline(object(), Settings(), Models())._generate(
+        {
+            "route": Route.MULTIHOP,
+            "query": "Some question",
+            "tenant_id": "tenant",
+            "accepted_evidence": [_evidence("a", "real evidence text").model_dump(mode="json")],
+            "context_groups": [{"title": "doc", "ids": ["a"]}],
+        }
+    )
+
+    assert "could not find enough authorized evidence" in result["answer"]
+    assert "real evidence text" not in result["answer"]
+    assert result["answer_source"] == "unverifiable"
+
+
+@pytest.mark.asyncio
+async def test_generate_still_uses_numbered_fallback_when_no_model_is_configured():
+    """_numbered_fallback (raw evidence dump) stays correct for the genuinely
+    different case of no LLM configured at all -- there's no model to ask for
+    a grounded answer, so showing the retrieved evidence directly is the best
+    available behavior. This must not regress from the _generate changes."""
+
+    result = await RagPipeline(object(), Settings(), None)._generate(
+        {
+            "route": Route.MULTIHOP,
+            "query": "Some question",
+            "tenant_id": "tenant",
+            "accepted_evidence": [_evidence("a", "real evidence text").model_dump(mode="json")],
+            "context_groups": [{"title": "doc", "ids": ["a"]}],
+        }
+    )
+
+    assert "real evidence text" in result["answer"]
+    assert result["answer_source"] == "fallback"
+
+
+@pytest.mark.asyncio
+async def test_generate_no_evidence_early_return_reports_its_answer_source():
+    result = await RagPipeline(object(), Settings(), None)._generate(
+        {
+            "route": Route.MULTIHOP,
+            "query": "Some question",
+            "tenant_id": "tenant",
+            "accepted_evidence": [],
+            "context_groups": [],
+        }
+    )
+
+    assert result["answer_source"] == "no_evidence"
+
+
+@pytest.mark.asyncio
+async def test_generate_propagates_a_transport_error_from_the_grounded_answer_call():
+    """_grounded_answer's try/except only guards the JSON parse, not the
+    completion call itself -- a real transport error must still kill the
+    durable run rather than silently degrading into a refusal."""
+
+    class Models:
+        async def complete(self, messages, **kwargs):
+            raise ConnectionError("boom")
+
+    with pytest.raises(ConnectionError):
+        await RagPipeline(object(), Settings(), Models())._generate(
+            {
+                "route": Route.MULTIHOP,
+                "query": "Some question",
+                "tenant_id": "tenant",
+                "accepted_evidence": [_evidence("a", "evidence").model_dump(mode="json")],
+                "context_groups": [{"title": "doc", "ids": ["a"]}],
+            }
+        )
+
+
+@pytest.mark.asyncio
+async def test_answer_source_survives_the_full_graph_run_not_just_generate_directly():
+    """AgentState (schemas/domain.py) is the TypedDict LangGraph uses to define
+    its state channels -- a node returning a key absent from that schema gets
+    silently dropped when merged into the graph's final state. Calling
+    _generate() directly (as the other tests here do) can't catch that gap;
+    only a full RagPipeline.run() through the actual graph can."""
+
+    class Models(AgenticModels):
+        async def complete(self, messages, **kwargs):
+            if "atomic factual claims" in messages[0]["content"]:
+                return "not json"
+            return await super().complete(messages, **kwargs)
+
+    result = await RagPipeline(LeafRetriever(), Settings(max_leaf_retries=2), Models()).run(
+        "Find the multi-hop connection", AuthContext(subject="user", tenant_id="tenant")
+    )
+
+    assert result["answer_source"] == "unverifiable"

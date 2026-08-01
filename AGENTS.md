@@ -20,3 +20,4 @@
 - Serialize JSONB mappings before passing them to asyncpg and decode them at repository boundaries; its default JSONB codec accepts strings, not dictionaries.
 - RAPTOR uses soft-membership GMM clustering with BIC selection; inputs above the target cluster size require at least two components so a recursive parent level is always produced.
 - RAPTOR summaries are navigation-only and bounded to 4,000 characters; overlong valid model output must not fail the durable corpus rebuild.
+- Read `docs/pitfalls-and-lessons.md` when a bug's root cause isn't obvious from its symptom — it's a running log of debugging pitfalls (tautological eval metrics, LangGraph dropping undeclared state fields, LLM output-wrapping quirks, token-budget starvation, under-provisioned local infra, credential-format assumptions) with the generalizable lesson each one left. Add a short entry there (what happened / root cause / lesson) whenever a fix needs a second pass or the cause was non-obvious.

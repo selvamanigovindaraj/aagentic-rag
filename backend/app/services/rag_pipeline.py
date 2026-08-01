@@ -444,6 +444,7 @@ class RagPipeline:
                 "grounded_claims": 0,
                 "citation_references": 0,
                 "valid_citation_references": 0,
+                "answer_source": "no_evidence",
                 "status": "complete",
             }
         if not self.models:
@@ -459,7 +460,9 @@ class RagPipeline:
                 "fallback_used",
                 extra={"node": "generate", "reason": "citation_outside_accepted_evidence"},
             )
-        return self._numbered_fallback(state, evidence)
+        # The LLM was attempted but gave no verifiable answer -- refuse rather
+        # than present the retrieved evidence as if it were validated.
+        return self._unverifiable_answer(state)
 
     async def _grounded_answer(self, state: AgentState, evidence: list[Evidence]):
         # Unlike the other nodes, only the parse is guarded: a transport error
@@ -493,7 +496,9 @@ class RagPipeline:
         answer = _NO_EVIDENCE_ANSWER
         if grounded.unsupported:
             answer += " Missing: " + "; ".join(grounded.unsupported)
-        return self._generation_result(state, answer, used=[], claims=0, references=0)
+        return self._generation_result(
+            state, answer, used=[], claims=0, references=0, answer_source="declined"
+        )
 
     def _cited_answer(
         self, state: AgentState, grounded: GroundedAnswer, sources: dict[str, Evidence]
@@ -515,17 +520,46 @@ class RagPipeline:
             answer += "\n\nUnsupported: " + "; ".join(grounded.unsupported)
         references = sum(len(claim.evidence_ids) for claim in grounded.claims)
         return self._generation_result(
-            state, answer, used, claims=len(grounded.claims), references=references
+            state,
+            answer,
+            used,
+            claims=len(grounded.claims),
+            references=references,
+            answer_source="grounded",
         )
 
     def _numbered_fallback(self, state: AgentState, evidence: list[Evidence]) -> dict:
         answer = "\n\n".join(f"{item.text} [{index}]" for index, item in enumerate(evidence, 1))
         return self._generation_result(
-            state, answer, evidence, claims=len(evidence), references=len(evidence)
+            state,
+            answer,
+            evidence,
+            claims=len(evidence),
+            references=len(evidence),
+            answer_source="fallback",
+        )
+
+    def _unverifiable_answer(self, state: AgentState) -> dict:
+        # The grounded-claims call either didn't parse or cited evidence
+        # outside what was accepted -- there's no safe way to present the
+        # retrieved evidence as an answer without model verification.
+        return self._generation_result(
+            state,
+            _NO_EVIDENCE_ANSWER,
+            used=[],
+            claims=0,
+            references=0,
+            answer_source="unverifiable",
         )
 
     def _generation_result(
-        self, state: AgentState, answer: str, used: list[Evidence], claims: int, references: int
+        self,
+        state: AgentState,
+        answer: str,
+        used: list[Evidence],
+        claims: int,
+        references: int,
+        answer_source: str,
     ) -> dict:
         citations = [
             Citation(
@@ -546,6 +580,7 @@ class RagPipeline:
             "grounded_claims": claims,
             "citation_references": references,
             "valid_citation_references": references,
+            "answer_source": answer_source,
             "model_calls": state.get("model_calls", 0) + (1 if self.models else 0),
             "status": "complete",
         }

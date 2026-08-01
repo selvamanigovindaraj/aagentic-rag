@@ -9,12 +9,12 @@ services:
       S3_ACCESS_KEY: rag
       S3_SECRET_KEY: agentic-rag-secret
       S3_BUCKET: rag-documents
-      WEAVIATE_URL: ${WEAVIATE_URL}
-      WEAVIATE_API_KEY: ${WEAVIATE_API_KEY}
+      WEAVIATE_URL: ${WEAVIATE_URL:?WEAVIATE_URL must be set (Weaviate Cloud only per AGENTS.md)}
+      WEAVIATE_API_KEY: ${WEAVIATE_API_KEY:?WEAVIATE_API_KEY must be set}
       WEAVIATE_COLLECTION: ${WEAVIATE_COLLECTION:-FilingSection}
       NEO4J_URI: neo4j://neo4j:7687
-      NEO4J_USER: neo4j
-      NEO4J_PASSWORD: agentic-rag-secret
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-agentic-rag-secret}
       # LiteLLM auto-discovers whichever provider's own key env var is set
       # (below); LLM_FLASH_MODEL/LLM_PRO_MODEL select the provider+model, so
       # swapping providers is a .env change only -- no compose/code edit.
@@ -53,6 +53,9 @@ services:
   phoenix:
     image: arizephoenix/phoenix:latest
     environment: {PHOENIX_SQL_DATABASE_URL: sqlite:////data/phoenix.db}
+    # 900m OOM-killed it (137) on a bulk spans query -- each span carries full
+    # prompt/response payloads, large at the 15000-token pro budget.
+    mem_limit: 2500m
     ports: ["6006:6006", "4317:4317"]
     volumes: ["phoenixdata:/data"]
   frontend:
@@ -74,11 +77,22 @@ services:
     volumes: ["objectdata:/data"]
   neo4j:
     image: neo4j:2026.06.0
-    environment: {NEO4J_AUTH: neo4j/agentic-rag-secret}
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-agentic-rag-secret}
+      # Without explicit sizing, Neo4j auto-scales heap/pagecache off the
+      # full host memory it sees, not the actual graph size -- for this
+      # dataset (tens of thousands of nodes/rels) that badly over-allocates
+      # on a shared dev host. Sized comfortably above what this graph needs.
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    mem_limit: 1200m
     ports: ["7474:7474", "7687:7687"]
     volumes: ["neo4jdata:/data"]
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u neo4j -p agentic-rag-secret 'RETURN 1' || exit 1"]
+      test:
+        - CMD-SHELL
+        - cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-agentic-rag-secret} 'RETURN 1' || exit 1
       interval: 10s
       timeout: 10s
       retries: 10

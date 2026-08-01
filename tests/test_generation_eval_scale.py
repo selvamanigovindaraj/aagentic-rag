@@ -5,7 +5,7 @@ import pytest
 from app.core.config import Settings
 from app.services.rag_pipeline import RagPipeline
 
-from evaluation.generation_eval import _breakdown_by_type, _run_all_cases
+from evaluation.generation_eval import _breakdown_by_type, _case_result, _run_all_cases
 
 
 class _DirectRetriever:
@@ -88,3 +88,43 @@ def test_breakdown_by_type_excludes_none_and_handles_empty_bucket():
     assert breakdown["inference_query"]["grounded_claim_rate"] == 0.5
     assert breakdown["inference_query"]["citation_validity"] is None
     assert breakdown["null_query"]["grounded_claim_rate"] is None
+
+
+def test_case_result_does_not_read_a_numbered_fallback_dump_as_grounded():
+    """_numbered_fallback sets grounded_claims == generated_claims and
+    valid_citation_references == citation_references by construction (it never
+    checks the evidence is actually relevant), so the plain equality check
+    used to read a raw-evidence-dump answer as tautologically 100% grounded
+    and 100% cited. answer_source now carries the real signal."""
+    case = {"name": "n", "expect_refusal": True, "question_type": "null_query"}
+    result = {
+        "answer": "some unrelated evidence text [1]",
+        "generated_claims": 1,
+        "grounded_claims": 1,
+        "citation_references": 1,
+        "valid_citation_references": 1,
+        "answer_source": "fallback",
+    }
+
+    case_result = _case_result(case, result)
+
+    assert case_result["grounded"] is False
+    assert case_result["citations_valid"] is False
+    assert case_result["answer_source"] == "fallback"
+
+
+def test_case_result_reports_grounded_answer_normally():
+    case = {"name": "n", "expect_refusal": False, "question_type": "inference_query"}
+    result = {
+        "answer": "A real answer. [1]",
+        "generated_claims": 1,
+        "grounded_claims": 1,
+        "citation_references": 1,
+        "valid_citation_references": 1,
+        "answer_source": "grounded",
+    }
+
+    case_result = _case_result(case, result)
+
+    assert case_result["grounded"] is True
+    assert case_result["citations_valid"] is True
