@@ -204,6 +204,7 @@ class AgentState(TypedDict, total=False):
     escalated: bool
     needs_escalation: bool
     citation_verification: str
+    answer_source: str
     generated_claims: int
     grounded_claims: int
     citation_references: int

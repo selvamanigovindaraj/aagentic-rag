@@ -62,6 +62,147 @@ async def test_complete_strips_a_markdown_json_fence_when_json_output(monkeypatc
 
 
 @pytest.mark.asyncio
+async def test_complete_strips_a_think_block_before_the_json_when_json_output(monkeypatch):
+    """MiniMax-M3 (the pro model, used only for multihop/temporal grounded-answer
+    calls) always wraps json_output=True completions in a <think>...</think>
+    reasoning block despite model_kwargs={"thinking": {"type": "disabled"}} being
+    silently dropped for this provider -- observed live via a direct gateway call,
+    not hypothetical. Without stripping it, GroundedAnswer.model_validate_json(raw)
+    fails deterministically on every multihop/temporal call, and _generate falls
+    through to _numbered_fallback (dumping raw evidence) instead of the intended
+    refusal/citation paths."""
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content='<think>\nThe user wants JSON.\n</think>\n{"route":"direct"}',
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    raw = await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+    assert raw == '{"route":"direct"}'
+
+
+@pytest.mark.asyncio
+async def test_complete_strips_a_think_block_stacked_with_a_markdown_fence(monkeypatch):
+    """A model could plausibly wrap output in both quirks at once -- the think
+    strip and the fence strip must chain, not branch, or one wrapper alone gets
+    handled and the other leaks into the "parsed" JSON."""
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content='<think>reasoning</think>\n```json\n{"route":"direct"}\n```',
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    raw = await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+    assert raw == '{"route":"direct"}'
+
+
+@pytest.mark.asyncio
+async def test_complete_strips_a_trailing_fence_with_no_matching_opening_fence(monkeypatch):
+    """Observed live: even at temperature=0 the model isn't perfectly
+    deterministic about wrapping -- one call for the exact same prompt
+    produced plain JSON followed by a stray closing ``` with no opening
+    fence at all. The old strip logic only handled a fence that STARTS the
+    text, so this trailing garbage caused json.loads to fail with
+    "Extra data" even though the JSON itself was perfectly well-formed."""
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content='{"route":"direct"}\n```',
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    raw = await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+    assert raw == '{"route":"direct"}'
+
+
+@pytest.mark.asyncio
+async def test_complete_leaves_an_unclosed_think_block_unchanged(monkeypatch):
+    """A reasoning block truncated by max_tokens before its closing tag can't be
+    safely stripped (no way to know where reasoning ends and content begins) --
+    the text passes through unchanged and the caller's JSON parse fails as before,
+    which is safe because _generate now refuses rather than dumping evidence."""
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content="<think>\nreasoning that got cut off before any closing tag",
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    raw = await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+    assert raw == "<think>\nreasoning that got cut off before any closing tag"
+
+
+@pytest.mark.asyncio
+async def test_complete_recovers_json_from_a_think_block_missing_its_closing_tag(monkeypatch):
+    """Observed live: the model sometimes never emits a </think> closing tag
+    at all, even though it goes on to produce a complete, well-formed JSON
+    answer at the end -- not a truncation (finish_reason was "stop"), just an
+    inconsistent formatting habit. A tag-based strip can't help here since
+    there's no closing tag to find; scanning for the rightmost valid JSON
+    object recovers the real answer regardless."""
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content=(
+                '<think>\nLet me analyze the question. The company invests in {things}, '
+                'so the answer is clear.\n{"claims":[{"text":"Answer.","evidence_ids":["a"]}],'
+                '"unsupported":[]}'
+            ),
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    raw = await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+    assert raw == '{"claims":[{"text":"Answer.","evidence_ids":["a"]}],"unsupported":[]}'
+
+
+@pytest.mark.asyncio
+async def test_complete_prefers_the_final_json_over_a_schema_quoted_in_reasoning(monkeypatch):
+    """A model reasoning about the task can quote the target JSON shape
+    inline ("I need to return {\"claims\": [], ...}") before producing the
+    real answer -- a left-to-right search for the first '{' would grab that
+    inline example instead of the actual answer that follows it."""
+
+    async def invoke(model, messages, config=None, **kwargs):
+        return AIMessage(
+            content=(
+                '<think>\nI need to return JSON like {"claims": [], "unsupported": []} '
+                "as the schema.\n</think>\n"
+                '{"claims":[{"text":"Real answer.","evidence_ids":["a"]}],"unsupported":[]}'
+            ),
+            usage_metadata={"input_tokens": 1, "output_tokens": 1, "total_tokens": 2},
+        )
+
+    monkeypatch.setattr(ChatLiteLLM, "ainvoke", invoke)
+    gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
+
+    raw = await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
+
+    assert raw == '{"claims":[{"text":"Real answer.","evidence_ids":["a"]}],"unsupported":[]}'
+
+
+@pytest.mark.asyncio
 async def test_complete_leaves_plain_text_untouched_when_not_json_output(monkeypatch):
     async def invoke(model, messages, config=None, **kwargs):
         return AIMessage(
@@ -94,7 +235,8 @@ async def test_litellm_gateway_uses_flash_and_pro_from_settings(monkeypatch):
     gateway = LiteLLMGateway(Settings(llm_api_key="test-key"))
 
     assert gateway.pro.model_kwargs == {"thinking": {"type": "disabled"}}
-    assert gateway.pro.max_tokens == 2000
+    assert gateway.flash.max_tokens == Settings().llm_flash_max_tokens
+    assert gateway.pro.max_tokens == Settings().llm_pro_max_tokens
 
     await gateway.complete([{"role": "user", "content": "route"}], json_output=True)
     await gateway.complete([{"role": "user", "content": "solve"}], use_pro=True)

@@ -32,6 +32,7 @@ def _error_case_result(case: dict, exc: Exception) -> dict:
         "expect_refusal": case["expect_refusal"],
         "refused": False,
         "refusal_correct": False,
+        "answer_source": None,
         "grounded": None,
         "citations_valid": None,
         "answer_correct": None,
@@ -49,24 +50,34 @@ def _answer_correct(case: dict, answer: str, refused: bool) -> bool | None:
     return expected.casefold() in answer.casefold()
 
 
+def _verified_metric(is_fallback: bool, actual: int, expected: int) -> bool | None:
+    # _numbered_fallback sets actual == expected by construction, not by
+    # checking the evidence is actually relevant -- a plain equality check
+    # would read that dump as tautologically 100% grounded/cited.
+    if is_fallback:
+        return False
+    return actual == expected if expected else None
+
+
 def _case_result(case: dict, result: dict) -> dict:
     answer = result.get("answer", "")
     refused = REFUSAL_TEXT in answer
-    generated_claims = result.get("generated_claims", 0)
-    citation_references = result.get("citation_references", 0)
+    answer_source = result.get("answer_source")
+    is_fallback = answer_source == "fallback"
     return {
         "name": case["name"],
         "question_type": case.get("question_type"),
         "expect_refusal": case["expect_refusal"],
         "refused": refused,
         "refusal_correct": refused == case["expect_refusal"],
-        "grounded": (
-            result.get("grounded_claims", 0) == generated_claims if generated_claims else None
+        "answer_source": answer_source,
+        "grounded": _verified_metric(
+            is_fallback, result.get("grounded_claims", 0), result.get("generated_claims", 0)
         ),
-        "citations_valid": (
-            result.get("valid_citation_references", 0) == citation_references
-            if citation_references
-            else None
+        "citations_valid": _verified_metric(
+            is_fallback,
+            result.get("valid_citation_references", 0),
+            result.get("citation_references", 0),
         ),
         "answer_correct": _answer_correct(case, answer, refused),
     }

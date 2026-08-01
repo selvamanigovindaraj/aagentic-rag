@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_flash_model: str = "minimax/MiniMax-M2.7-highspeed"
     llm_pro_model: str = "minimax/MiniMax-M3"
+    # Both models' visible <think>...</think> reasoning shares one token
+    # budget with the actual answer -- observed live, a 32-source multihop
+    # grounded-claims call produced 8000+ characters of reasoning alone and
+    # was cut off mid-sentence before any JSON at a 2000 budget, deterministically
+    # failing to parse every time. Calibrated headroom, not a guarantee -- raise
+    # further if truncation persists on heavier queries.
+    llm_flash_max_tokens: int = 8000
+    llm_pro_max_tokens: int = 15000
     # "Highspeed" is a premium low-latency M2.7 variant, not a cheap one -- it
     # costs MORE per token than M3 ($0.60/$2.40 vs $0.30/$1.20). Flash still
     # gets the volume-cost benefit from fewer output tokens on ordinary calls,

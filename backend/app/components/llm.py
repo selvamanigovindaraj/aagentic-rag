@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Protocol
@@ -12,6 +13,8 @@ from ..core.config import Settings
 
 logger = logging.getLogger(__name__)
 
+_JSON_DECODER = json.JSONDecoder()
+
 
 class ModelGateway(Protocol):
     async def complete(
@@ -20,14 +23,35 @@ class ModelGateway(Protocol):
 
 
 def _strip_json_fence(text: str) -> str:
-    """Some models wrap JSON-mode output in a ```json fence despite
-    response_format={"type": "json_object"} -- observed live on MiniMax-M2.7-
-    highspeed. Unwrap it so schema.model_validate_json(raw) still parses."""
-    stripped = text.strip()
-    if not stripped.startswith("```"):
-        return stripped
-    _, _, body = stripped.partition("\n")
-    return body.removesuffix("```").strip()
+    """MiniMax models wrap JSON-mode output unpredictably -- observed live,
+    not hypothetical: a ```json fence, a visible <think>...</think> block
+    (model_kwargs={"thinking": ...} is silently dropped for this provider),
+    a closing fence with no opening one, or a reasoning block that never
+    emits its closing tag at all, even at temperature=0 for the identical
+    prompt. Regex-matching each specific wrapper shape is a losing game.
+    Instead, try every '{' as a candidate start and let JSONDecoder parse a
+    complete value from each -- keep the one that extends furthest into the
+    text (largest end index), not the first or last candidate to succeed.
+    That single rule handles two failure modes at once: a nested object
+    (e.g. one claim inside a claims list) always ends before its enclosing
+    object, so the outer one wins; and reasoning that quotes the target
+    schema inline ("I need to return {...}") ends long before the real
+    answer that follows it, so the real answer wins. Returns the text
+    unchanged if no candidate parses, so the caller's own parse still fails
+    the same way as before (e.g. reasoning truncated by max_tokens with no
+    JSON anywhere)."""
+    text = text.strip()
+    best: tuple[int, int] | None = None
+    for start, char in enumerate(text):
+        if char != "{":
+            continue
+        try:
+            _, end = _JSON_DECODER.raw_decode(text, start)
+        except json.JSONDecodeError:
+            continue
+        if best is None or end > best[1]:
+            best = (start, end)
+    return text[best[0] : best[1]] if best else text
 
 
 class LiteLLMGateway:
@@ -54,8 +78,12 @@ class LiteLLMGateway:
                 "Neither llm_api_key nor llm_base_url is set; relying on LiteLLM's "
                 "provider-specific env var auto-discovery (e.g. DEEPSEEK_API_KEY)"
             )
-        self.flash = self._build_model(settings.llm_flash_model, settings)
-        self.pro = self._build_model(settings.llm_pro_model, settings)
+        self.flash = self._build_model(
+            settings.llm_flash_model, settings, max_tokens=settings.llm_flash_max_tokens
+        )
+        self.pro = self._build_model(
+            settings.llm_pro_model, settings, max_tokens=settings.llm_pro_max_tokens
+        )
         self.calls = 0
         self.input_tokens = 0
         self.output_tokens = 0
@@ -63,11 +91,11 @@ class LiteLLMGateway:
         self.settings = settings
 
     @staticmethod
-    def _build_model(model: str, settings: Settings) -> ChatLiteLLM:
+    def _build_model(model: str, settings: Settings, *, max_tokens: int) -> ChatLiteLLM:
         kwargs = {
             "model": model,
             "temperature": 0,
-            "max_tokens": 2000,
+            "max_tokens": max_tokens,
             "request_timeout": 120,
             "max_retries": 2,
             # ponytail: DeepSeek honors this and returns a clean answer; other
